@@ -38,9 +38,8 @@ def alternateUrl(url, session):
     for ext in tryExt:
 
         altUrl = url.replace(".pdf", ext)
-        altFile = session.get(altUrl)
-
-        if(altFile.status_code == 200 and len(altFile.content) > 1000):
+        altFile = session.head(altUrl, allow_redirects=True)
+        if(altFile.status_code == 200):
             return altUrl
     incrementErrorCount()       
     return None
@@ -147,108 +146,105 @@ def wait_for_completion():
     _pool.join()
 
 def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10):
-    # Create persistent task for this worker
     task_id = progress.add_task(f"Worker {worker_id}", total=1)
     _start_event.wait()
 
     while True:
-
-
         url = _pool.get()
-        if url is not None: 
 
-            if url is SENTINEL:
-                _pool.task_done()
-                break
+        if url is SENTINEL:
+            _pool.task_done()
+            break
 
-            filename = os.path.basename(url)
-            
-            path = os.path.join(os.path.join(out_dir,f"Dataset {_dataset}"), filename)
+        filename = os.path.basename(url)
+        path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
 
-            # ---- Pre-fetch file size via HEAD ----
-            
-            total = None
+        # ---- Skip logic ----
+        if os.path.exists(path):
             try:
                 head = session.head(url, allow_redirects=True, timeout=10)
                 if head.status_code == 200:
-                    content_length = head.headers.get("Content-Length")
-                    if content_length is not None:
-                        total = int(content_length)
+                    remote_size = head.headers.get("Content-Length")
+                    if remote_size:
+                        remote_size = int(remote_size)
+                        local_size = os.path.getsize(path)
+
+                        # Skip if identical and not the small "No Images Produced" PDF
+                        if (
+                            local_size == remote_size and
+                            not (0.9 < remote_size / 2433 < 1.1)
+                        ):
+                            progress.update(
+                                task_id,
+                                total=remote_size,
+                                completed=remote_size,
+                                description=f"[yellow]W{worker_id}: Skipped[/yellow]"
+                            )
+                            incrementDownloadCount()
+                            _pool.task_done()
+                            continue
             except Exception:
                 pass
 
-            if os.path.exists(path):
-                local_size = os.path.getsize(path)
+        try:
+            with session.get(url, stream=True) as r:
+                r.raise_for_status()
+                total = int(r.headers.get("Content-Length", 0))
 
-                # Try to get remote size
-                remote_size = None
-                try:
-                    head = session.head(url, allow_redirects=True, timeout=10)
-                    if head.status_code == 200:
-                        cl = head.headers.get("Content-Length")
-                        if cl:
-                            remote_size = int(cl)
-                except Exception:
-                    pass
-
-                if remote_size is not None and local_size == remote_size and not ( 0.9 < remote_size / 2433 < 1.1 ): ## these small files are likely to be "No Images Produced" pdfs, so we should re-download them regardless of size match and check for an alternate extension
-                    progress.update(
-                        task_id,
-                        total=remote_size,
-                        completed=remote_size,
-                        description=f"[yellow]W{worker_id}: Skipped (complete)[/yellow]"
-                    )
-                    incrementDownloadCount()
-                    time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
-                    _pool.task_done()
-                    continue
-
-            try:
-                with session.get(url, stream=True) as r:
-                    r.raise_for_status()
-                    total = int(r.headers.get("Content-Length", 0))
-
-                    # Reset this worker's progress bar
-                    progress.update(
-                        task_id,
-                        total=total,
-                        completed=0,
-                        description=f"[cyan]W{worker_id}: {filename}[/cyan]"
-                    )
-
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-                    with open(path, "wb") as f:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                                progress.update(task_id, advance=len(chunk))
-
-            except Exception as e:
-                incrementErrorCount()
-                progress.update(task_id, advance=len(chunk)) ## file failed, move on to next one without leaving progress bar stuck at 0%
-
-            finally:
-                # Leave bar at 100%, just mark idle
                 progress.update(
                     task_id,
-                    description=f"[green]W{worker_id}: {filename}[/green]"
+                    total=total,
+                    completed=0,
+                    description=f"[cyan]W{worker_id}: {filename}[/cyan]"
                 )
 
-                if open(path, "rb").read(1000).startswith(b"%PDF") and b"ReportLab PDF Library" in open(path, "rb").read():
-                    
-                    altFile = alternateUrl(url, session)
-                    if altFile is not None:
-                        incrementAlternateCount()
-                        _pool.put(altFile)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
 
-                incrementDownloadCount()
-                time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
+                bytes_written = 0
+                with open(path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        if not chunk:
+                            continue
+                        f.write(chunk)
+                        bytes_written += len(chunk)
+                        progress.update(task_id, completed=bytes_written)
 
-                _pool.task_done()
-                
-        else:
-            time.sleep(2)  # Sleep briefly if no URL, to avoid busy waiting
+        except Exception:
+            incrementErrorCount()
+            progress.update(
+                task_id,
+                description=f"[red]W{worker_id}: Failed[/red]"
+            )
+            _pool.task_done()
+            continue
+
+        # ---- Download complete at this point ----
+        progress.update(
+            task_id,
+            description=f"[green]W{worker_id}: {filename}[/green]"
+        )
+
+        incrementDownloadCount()
+
+        # Mark task complete immediately
+        _pool.task_done()
+
+        # ---- Post-processing OUTSIDE critical path ----
+        try:
+            with open(path, "rb") as f:
+                header = f.read(4096)
+
+            if header.startswith(b"%PDF") and b"ReportLab PDF Library" in header:
+                altFile = alternateUrl(url, session)
+                if altFile:
+                    incrementAlternateCount()
+                    _pool.put(altFile)
+
+        except Exception:
+            pass
+
+        if timeBetweenFiles > 0:
+            time.sleep(timeBetweenFiles / 1000)
             
 
 
