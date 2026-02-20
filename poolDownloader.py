@@ -218,7 +218,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
             t.start()
             _workers.append(t)
 
-        while not (_producer_done.is_set() and _pool.empty()):
+        while True:
             with _counter_lock:
                 header_text = Text(
                     f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()}",
@@ -226,6 +226,12 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
                 )
 
             layout["header"].update(Panel(header_text))
+
+            if _producer_done.is_set():
+                # Check if all work is finished
+                if _pool.unfinished_tasks == 0:
+                    break
+
             time.sleep(0.2)
 
         _pool.join()
