@@ -4,8 +4,11 @@ The easiest way to run this is by cloning this repository in VS code, with the p
 Configure the YAML file as you see fit, the options should be pretty self explanatory.
 
 This scraper automatically converts any "No Images Produced" PDFs into appropriate file formats. 
-It parallelizes downloads to speed up data recovery. 
 
-It currently does not have any way of resuming a stopped downnload, you can however specify which datasets to comb.
+I implemented a download pool to more efficiently comb through the files. 
+
+It will resume downloading automatically. 
 
 Use at your own risk, there may be CSAM in the files.
+
+<img width="784" height="346" alt="image" src="https://github.com/user-attachments/assets/0758e789-dc1f-4056-925f-04396f106d34" />
