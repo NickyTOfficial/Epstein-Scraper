@@ -1,5 +1,6 @@
 import json
 import threading
+from anaconda_cli_base import console
 import requests
 import os
 import yaml
@@ -10,6 +11,8 @@ import poolDownloader
 
 datasetPattern = "https://www.justice.gov/epstein/doj-disclosures/data-set-{}-files"
 filePattern = "https://www.justice.gov/epstein/files/DataSet%20{}/{}"
+
+
 
 
 # setup code
@@ -23,6 +26,7 @@ except Exception:
         "fetchRetries": 5,
         "timeBetweenFiles": 100,
         "timeBetweenPages": 100,
+        "timeBetween403" : 20,
         "downloadWorkers": 10,
         "datasets": [1, 2, 3, 4],
         "poolSize": 450
@@ -32,6 +36,7 @@ directory = config.get("directory")
 timeBetweenPages = float(config.get("timeBetweenPages", "20"))
 fetchRetries = int(config.get("fetchRetries", "5"))
 timeBetweenFiles = float(config.get("timeBetweenFiles", "0.1"))
+timeBetween403 = float(config.get("timeBetween403", "4"))
 datasets = config.get("datasets", [1])
 downloadWorkers = int(config.get("downloadWorkers", 8))
 poolSize = int(config.get("poolSize", 100))
@@ -41,6 +46,7 @@ data = {
     "timeBetweenPages": timeBetweenPages,
     "fetchRetries": fetchRetries,
     "timeBetweenFiles": timeBetweenFiles,
+    "timebetween403": config.get("timeBetween403", 4),
     "datasets": datasets,
     "downloadWorkers": downloadWorkers,
     "poolSize": poolSize
@@ -115,11 +121,11 @@ def reset_state():
 #---------------#
 
 
-def fetch_with_retry(url, session, retries=5, delay=3, timeout=10):
+def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
     for attempt in range(retries):
         try:
-            r = session.get(url, timeout=timeout)
+            r = session.get(url, timeout=10)
         except Exception:
             r = None
 
@@ -135,57 +141,65 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeout=10):
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
-            time.sleep(delay)
+            time.sleep(timeBetween403)
+            poolDownloader.incrementErrorCount()
             continue
-            # number of files found on this page (removed print)
 
     return None
 
 
 #---------------#
 
+
 def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPages, fetchRetries = fetchRetries):
 
     page = dataset_page
 
+    files = []
+
     while True:
 
-        if(poolDownloader.poolSize() < poolSize + 10): ## having some problems with pool filling just below threshold and not starting, just adding 10 to fix
-            
-            url = datasetPattern.format(dataset_num) + f"?page={page}"
+        while(poolDownloader.poolSize() >= poolSize + 20):  # Wait until there's space in the pool
+            time.sleep(0.5)  # Avoid busy waiting
 
-            r = fetch_with_retry(url, s, retries=fetchRetries, delay=timeBetweenPages)
-            if r is None:
-                print(f"Failed to fetch {url} after multiple attempts.")
-                break
-            soup = BeautifulSoup(r.text, "html.parser")
+        url = datasetPattern.format(dataset_num) + f"?page={page}"
 
-            page_files = set()
+        r = fetch_with_retry(url, s, retries=fetchRetries, delay=timeBetweenPages, timeBetween403=timeBetween403)
+        if r is None:
+            print(f"Failed to fetch {url} after multiple attempts.")
+            break
+        soup = BeautifulSoup(r.text, "html.parser")
 
-            for a in soup.find_all("a", href=True):
-                href = a["href"]
-                if "/epstein/files/" in href and "EFTA" in href: ## Adds all EFTA files found on this page to the pool
-                    filename = href.split("/")[-1]
-                    page_files.add(filename)
+        page_files = set()
 
-            page_files = sorted(page_files) # preserve file order
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if "/epstein/files/" in href and "EFTA" in href: ## Adds all EFTA files found on this page to the pool
+                filename = href.split("/")[-1]
+                page_files.add(filename)
+
+        page_files = sorted(page_files) # preserve file order
+
+        if page_files in files:
+            break
         
+        files.append(page_files)
 
-            poolDownloader.updatePool([filePattern.format(dataset_num, filename) for filename in page_files])
+        poolDownloader.updatePool([filePattern.format(dataset_num, filename) for filename in page_files])
 
-            page += 1
+        page += 1
 
-            poolDownloader.setDatasetInfo(dataset_num, page)
+        poolDownloader.setDatasetInfo(dataset_num, page)
 
-            if poolDownloader.poolSize() >= poolSize: # delay download start until we have a decent buffer of files in the pool to prevent early starvation of download workers
-                poolDownloader.signalStart()
+        if poolDownloader.poolSize() >= poolSize: # delay download start until we have a decent buffer of files in the pool to prevent early starvation of download workers
+            poolDownloader.signalStart()
 
-            # Save state after each page completes
-            save_state(dataset_num, page, poolDownloader.exportPool())
+        # Save state after each page completes
+        save_state(dataset_num, page, poolDownloader.exportPool())
 
-            time.sleep(timeBetweenPages/1000)  # convert ms to seconds
+        time.sleep(timeBetweenPages/1000)  # convert ms to seconds
 
-    
+
 
 
 # Load state and resume from where we left off
@@ -199,27 +213,18 @@ poolDownloader.importPool(pending)
 
 
 try:
-        
+
+
+    downloader_thread = threading.Thread(
+        target=poolDownloader.downloadFromPool,
+        args=(directory, downloadWorkers, timeBetweenFiles, s),
+    )
+    downloader_thread.start()
+
 
     for iterand in datasets:
-
-        if last_dataset is not None and iterand < last_dataset:
-            continue
-
-        downloader_thread = threading.Thread(
-        target=poolDownloader.downloadFromPool,
-            args=(os.path.join(directory, f"Dataset {iterand}"), downloadWorkers, timeBetweenFiles, s),
-        )
-
-        downloader_thread.start()
-
+        
         updatePool(iterand, last_page if iterand == last_dataset else 0)
-
-        poolDownloader.producerDone()
-
-        downloader_thread.join()
-
-        save_state(iterand, last_page, poolDownloader.exportPool())
         
 except KeyboardInterrupt:
     print("\nInterrupted. Saving state...")
@@ -237,5 +242,5 @@ except KeyboardInterrupt:
     print("State saved and shutdown initiated.")
     sys.exit(0)
 
-    
-
+poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
+poolDownloader.producerDone()  # Signal that the producer is done adding URLs

@@ -13,8 +13,15 @@ from rich.text import Text
 
 console = Console()
 
+SENTINEL = object()
+
 _producer_done = threading.Event()
 _start_event = threading.Event()
+
+_producer_done.clear()
+_start_event.clear()
+
+errors = 0
 
 def producerDone():
     _producer_done.set()
@@ -25,7 +32,6 @@ def signalStart():
 # Thread-safe pool
 _pool = None
 _workers = []
-_stop_signal = object()
 _worker_status = {}
 _status_lock = threading.Lock()
 
@@ -47,6 +53,10 @@ def incrementDownloadCount():
     with _counter_lock:
         _download_count += 1
 
+def incrementErrorCount():   
+    global errors
+    with _counter_lock:
+        errors += 1
 
 def initPool():
     global _pool
@@ -78,7 +88,15 @@ def importPool(urls):
     for url in urls:
         _pool.put(url)
 
+def close_pool(num_workers):
 
+    print("Closing pool and waiting for workers to finish...")
+
+    for _ in range(num_workers):
+        _pool.put(SENTINEL)
+
+def wait_for_completion():
+    _pool.join()
 
 def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10):
     # Create persistent task for this worker
@@ -87,85 +105,94 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
 
     while True:
 
-        try:
-            url = _pool.get(timeout=1)
-        except queue.Empty:
-            if _producer_done.is_set():
+
+        url = _pool.get()
+        if url is not None: 
+
+            if url is SENTINEL:
+                _pool.task_done()
                 break
-            continue
 
-        if url is _stop_signal:
-            _pool.task_done()
-            break
+            filename = os.path.basename(url)
+            
+            path = os.path.join(os.path.join(out_dir,f"Dataset {_dataset}"), filename)
+            # ---- Pre-fetch file size via HEAD ----
+            
+            total = None
+            try:
+                head = session.head(url, allow_redirects=True, timeout=10)
+                if head.status_code == 200:
+                    content_length = head.headers.get("Content-Length")
+                    if content_length is not None:
+                        total = int(content_length)
+            except Exception:
+                pass
 
-        filename = os.path.basename(url)
-        path = os.path.join(out_dir, filename)
+            if os.path.exists(path):
+                local_size = os.path.getsize(path)
 
-        # ---- Pre-fetch file size via HEAD ----
-        
-        total = None
-        try:
-            head = session.head(url, allow_redirects=True, timeout=10)
-            if head.status_code == 200:
-                content_length = head.headers.get("Content-Length")
-                if content_length is not None:
-                    total = int(content_length)
-        except Exception:
-            pass
+                # Try to get remote size
+                remote_size = None
+                try:
+                    head = session.head(url, allow_redirects=True, timeout=10)
+                    if head.status_code == 200:
+                        cl = head.headers.get("Content-Length")
+                        if cl:
+                            remote_size = int(cl)
+                except Exception:
+                    pass
 
-        # ---- Now start actual download ----
-        with session.get(url, stream=True) as r:
-            r.raise_for_status()
+                if remote_size is not None and local_size == remote_size:
+                    progress.update(
+                        task_id,
+                        total=remote_size,
+                        completed=remote_size,
+                        description=f"[yellow]W{worker_id}: Skipped (complete)[/yellow]"
+                    )
+                    incrementDownloadCount()
+                    time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
+                    _pool.task_done()
+                    continue
 
-            # fallback if HEAD didn't give size
-            if total is None:
-                content_length = r.headers.get("Content-Length")
-                if content_length is not None:
-                    total = int(content_length)
+            try:
+                with session.get(url, stream=True) as r:
+                    r.raise_for_status()
+                    total = int(r.headers.get("Content-Length", 0))
 
-            progress.update(
-                task_id,
-                total=total,
-                completed=0,
-                description=f"[cyan]W{worker_id}: {filename}[/cyan]"
-            )
+                    # Reset this worker's progress bar
+                    progress.update(
+                        task_id,
+                        total=total,
+                        completed=0,
+                        description=f"[cyan]W{worker_id}: {filename}[/cyan]"
+                    )
 
-        try:
-            with session.get(url, stream=True) as r:
-                r.raise_for_status()
-                total = int(r.headers.get("Content-Length", 0))
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
 
-                # Reset this worker's progress bar
+                    with open(path, "wb") as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                                progress.update(task_id, advance=len(chunk))
+
+            except Exception as e:
+                console.print(f"[red]Download failed:[/red] {url} ({e})")
+                progress.update(task_id, advance=len(chunk)) ## file failed, move on to next one without leaving progress bar stuck at 0%
+
+            finally:
+                # Leave bar at 100%, just mark idle
                 progress.update(
                     task_id,
-                    total=total,
-                    completed=0,
-                    description=f"[cyan]W{worker_id}: {filename}[/cyan]"
+                    description=f"[green]W{worker_id}: {filename}[/green]"
                 )
 
-                os.makedirs(os.path.dirname(path), exist_ok=True)
+                incrementDownloadCount()
+                time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
 
-                with open(path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                            progress.update(task_id, advance=len(chunk))
-
-        except Exception as e:
-            console.print(f"[red]Download failed:[/red] {url} ({e})")
-            progress.update(task_id, advance=len(chunk)) ## file failed, move on to next one without leaving progress bar stuck at 0%
-
-        finally:
-            # Leave bar at 100%, just mark idle
-            progress.update(
-                task_id,
-                description=f"[green]W{worker_id}: {filename}[/green]"
-            )
-
-            incrementDownloadCount()
-            time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
-
-            _pool.task_done()
+                _pool.task_done()
+        else:
+            time.sleep(2)  # Sleep briefly if no URL, to avoid busy waiting
+            
 
 
 
@@ -184,7 +211,7 @@ def forceShutdown():
 
     # Send stop signal to all workers
     for _ in _workers:
-        _pool.put(_stop_signal)
+        _pool.put(SENTINEL)
 
 
 def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
@@ -221,7 +248,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()}",
+                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Errors: {errors}",
                     style="bold white"
                 )
 
@@ -236,9 +263,9 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
 
         _pool.join()
 
-        # Stop workers
+        # Now send SENTINEL to each worker
         for _ in _workers:
-            _pool.put(_stop_signal)
+            _pool.put(SENTINEL)
 
         for t in _workers:
             t.join()
