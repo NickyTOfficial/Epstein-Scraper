@@ -3,8 +3,6 @@ The easiest way to run this is by cloning this repository in VS code, with the p
 
 Configure the YAML file as you see fit, the options should be pretty self explanatory.
 
-This scraper automatically converts any "No Images Produced" PDFs into appropriate file formats. 
-
 I implemented a download pool to more efficiently comb through the files. 
 
 It will resume downloading automatically. 
