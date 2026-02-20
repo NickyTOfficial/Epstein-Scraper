@@ -1,3 +1,4 @@
+import json
 import requests
 import concurrent.futures
 import magic
@@ -89,6 +90,40 @@ verificationCookie = requests.cookies.create_cookie("justiceGovAgeVerified", "tr
 s.cookies.set_cookie(verificationCookie)
 
 
+#---------------#
+# State management for resume functionality
+
+STATE_FILE = "scraper_state.json"
+
+def load_state():
+    """Load the last known state (dataset and page)"""
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"last_dataset": None, "last_page": None}
+
+def save_state(dataset_num, page_num):
+    """Save the current state (dataset and page)"""
+    try:
+        with open(STATE_FILE, 'w') as f:
+            json.dump({"last_dataset": dataset_num, "last_page": page_num}, f)
+    except Exception:
+        pass
+
+def reset_state():
+    """Clear the saved state"""
+    if os.path.exists(STATE_FILE):
+        try:
+            os.remove(STATE_FILE)
+        except Exception:
+            pass
+
+#---------------#
+
+
 def fetch_with_retry(url, session, retries=5, delay=3, timeout=10):
 
     for attempt in range(retries):
@@ -162,8 +197,8 @@ def download_file(url, output_folder = "", filename = None):
 
 #---------------#
 
-def scrape_dataset(dataset_num):
-    page = 0
+def scrape_dataset(dataset_num, dataset_page = 0):
+    page = dataset_page
 
     files = set()
     dataset_failed = []
@@ -175,25 +210,17 @@ def scrape_dataset(dataset_num):
 
     while True:
         url = datasetPattern.format(dataset_num) + f"?page={page}"
-        # progress will be shown on the single updating dataset line
-
         r = fetch_with_retry(url, s)
-
         if r is None:
             print(f"Failed to fetch {url} after multiple attempts.")
             break
-
         soup = BeautifulSoup(r.text, "html.parser")
-
         page_files = set()
-
         for a in soup.find_all("a", href=True):
             href = a["href"]
             if "/epstein/files/" in href and "EFTA" in href:
                 filename = href.split("/")[-1]
                 page_files.add(filename)
-
-        # If no new files were added, also terminate loop to avoid infinite pagination
         if page_files.issubset(files):
             break
         page_files = sorted(page_files)
@@ -233,6 +260,8 @@ def scrape_dataset(dataset_num):
                     sys.stdout.flush()
 
         page += 1
+        # Save state after each page completes
+        save_state(dataset_num, page - 1)
         time.sleep(timeBetweenPages / 1000.0)  # Sleep for configured timeout to avoid overwhelming server
     # finished dataset -- print final newline and any failure summary
     print()
@@ -242,5 +271,24 @@ def scrape_dataset(dataset_num):
         print(f"Failed to download {len(dataset_failed)} files in dataset {dataset_num}: {short}{more}")
 
 
+# Load state and resume from where we left off
+state = load_state()
+last_dataset = state.get("last_dataset")
+last_page = state.get("last_page")
+
+# Check for command-line argument to reset state
+if "--reset" in sys.argv:
+    print("Resetting scraper state...")
+    reset_state()
+    last_dataset = None
+    last_page = None
+
 for iterand in datasets:
-    scrape_dataset(iterand)
+    # Skip datasets that have already been completed
+    if last_dataset is not None and iterand < last_dataset:
+        continue
+    
+    scrape_dataset(iterand, last_page if iterand == last_dataset else 0)
+    
+    # Update state after each dataset completes
+    save_state(iterand, 0)
