@@ -20,7 +20,7 @@ _start_event = threading.Event()
 
 _producer_done.clear()
 _start_event.clear()
-
+forbiddens = 0
 errors = 0
 
 def producerDone():
@@ -52,6 +52,11 @@ def incrementDownloadCount():
     global _download_count
     with _counter_lock:
         _download_count += 1
+
+def incrementForbiddenCount():   
+    global forbiddens
+    with _counter_lock:
+        forbiddens += 1
 
 def incrementErrorCount():   
     global errors
@@ -248,7 +253,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Errors: {errors}",
+                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors}",
                     style="bold white"
                 )
 

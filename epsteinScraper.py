@@ -142,7 +142,7 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
         if r.status_code in (403, 429, 500, 502, 503):
             time.sleep(timeBetween403)
-            poolDownloader.incrementErrorCount()
+            poolDownloader.incrementForbiddenCount()
             continue
 
     return None
@@ -166,7 +166,7 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
 
         r = fetch_with_retry(url, s, retries=fetchRetries, delay=timeBetweenPages, timeBetween403=timeBetween403)
         if r is None:
-            print(f"Failed to fetch {url} after multiple attempts.")
+            poolDownloader.incrementErrorCount()
             break
         soup = BeautifulSoup(r.text, "html.parser")
 
@@ -231,13 +231,6 @@ except KeyboardInterrupt:
     print("\nInterrupted. Saving state...")
 
     pending = poolDownloader.exportPool()
-
-    with open(STATE_FILE, "w") as f:
-        json.dump({
-            "last_dataset": iterand,
-            "last_page": last_page,
-            "pending_urls": pending
-        }, f)
 
     poolDownloader.forceShutdown()
     print("State saved and shutdown initiated.")
