@@ -84,17 +84,23 @@ def load_state():
     """Load the last known state (dataset and page)"""
     if os.path.exists(STATE_FILE):
         try:
-            with open(STATE_FILE, 'r') as f:
-                return json.load(f)
+            with open(STATE_FILE, "r") as f:
+                data = json.load(f)
+                poolDownloader.setDatasetInfo(last_dataset, last_page)
+
+                return data
         except Exception:
             pass
-    return {"last_dataset": None, "last_page": None}
+    return {"last_dataset": None, "last_page": None, "pending_urls": []}  # default state if no file or error
 
-def save_state(dataset_num, page_num):
-    """Save the current state (dataset and page)"""
+def save_state(dataset_num, page_num, pending_urls):
     try:
-        with open(STATE_FILE, 'w') as f:
-            json.dump({"last_dataset": dataset_num, "last_page": page_num}, f)
+        with open(STATE_FILE, "w") as f:
+            json.dump({
+                "last_dataset": dataset_num,
+                "last_page": page_num,
+                "pending_urls": pending_urls
+            }, f)
     except Exception:
         pass
 
@@ -139,6 +145,7 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeout=10):
 #---------------#
 
 def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPages, fetchRetries = fetchRetries):
+
     page = dataset_page
 
     while True:
@@ -170,11 +177,11 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
 
             poolDownloader.setDatasetInfo(dataset_num, page)
 
-            if poolDownloader.poolSize() >= poolSize - 64: # delay download start until we have a decent buffer of files in the pool to prevent early starvation of download workers
+            if poolDownloader.poolSize() >= poolSize: # delay download start until we have a decent buffer of files in the pool to prevent early starvation of download workers
                 poolDownloader.signalStart()
 
             # Save state after each page completes
-            save_state(dataset_num, page - 1)
+            save_state(dataset_num, page, poolDownloader.exportPool())
 
             time.sleep(timeBetweenPages/1000)  # convert ms to seconds
 
@@ -183,18 +190,13 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
 
 # Load state and resume from where we left off
 state = load_state()
+pending = state.get("pending_urls", [])
 last_dataset = state.get("last_dataset")
 last_page = state.get("last_page")
-
-# Check for command-line argument to reset state
-if "--reset" in sys.argv:
-    print("Resetting scraper state...")
-    reset_state()
-    last_dataset = None
-    last_page = None
-
 # Initialize pool once
 poolDownloader.initPool()
+poolDownloader.importPool(pending)
+
 
 try:
         
@@ -217,10 +219,20 @@ try:
 
         downloader_thread.join()
 
-        save_state(iterand, 0)
+        save_state(iterand, last_page, poolDownloader.exportPool())
         
 except KeyboardInterrupt:
-    print("\nInterrupted by user. Shutting down...")
+    print("\nInterrupted. Saving state...")
+
+    pending = poolDownloader.exportPool()
+
+    with open(STATE_FILE, "w") as f:
+        json.dump({
+            "last_dataset": iterand,
+            "last_page": last_page,
+            "pending_urls": pending
+        }, f)
+
     poolDownloader.forceShutdown()
     sys.exit(0)
 

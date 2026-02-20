@@ -57,9 +57,27 @@ def updatePool(urls):
     for url in urls:
         _pool.put(url)
 
+def setPool(urls):
+    global _pool
+    with _pool.mutex:
+        _pool.queue.clear()
+        for url in urls:
+            _pool.queue.append(url)
+
 
 def poolSize():
     return _pool.qsize()
+
+def exportPool():
+    items = []
+    with _pool.mutex:
+        items = list(_pool.queue)
+    return items
+
+def importPool(urls):
+    for url in urls:
+        _pool.put(url)
+
 
 
 def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10):
