@@ -23,9 +23,9 @@ except Exception:
         "fetchRetries": 5,
         "timeBetweenFiles": 100,
         "timeBetweenPages": 100,
-        "downloadWorkers": 5,
+        "downloadWorkers": 10,
         "datasets": [1, 2, 3, 4],
-        "poolSize": 16
+        "poolSize": 450
     }
 
 directory = config.get("directory")
@@ -150,7 +150,7 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
 
     while True:
 
-        if(poolDownloader.poolSize() < poolSize):
+        if(poolDownloader.poolSize() < poolSize + 10): ## having some problems with pool filling just below threshold and not starting, just adding 10 to fix
             
             url = datasetPattern.format(dataset_num) + f"?page={page}"
 
@@ -234,6 +234,7 @@ except KeyboardInterrupt:
         }, f)
 
     poolDownloader.forceShutdown()
+    print("State saved and shutdown initiated.")
     sys.exit(0)
 
     
