@@ -225,6 +225,7 @@ try:
     for iterand in datasets:
         
         updatePool(iterand, last_page if iterand == last_dataset else 0)
+        save_state(iterand, last_page if iterand == last_dataset else 0, poolDownloader.exportPool())
         
 except KeyboardInterrupt:
     print("\nInterrupted. Saving state...")
