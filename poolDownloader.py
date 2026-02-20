@@ -11,6 +11,42 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
 
+
+tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Produced", in order of occurance
+    ".avi",
+    ".mp4",
+    ".mov",
+    ".m4a",
+    ".m4v",
+    ".opus",
+    ".wav",
+    ".docx",
+    ".vob",
+    ".wmv",
+    ".mp3",
+    ".amr",
+    ".doc",
+    ".3gp",
+    ".ts",
+    ".xls",
+    ".db",
+    ".pluginpayloadattachment"
+]
+
+def alternateUrl(url, session):
+
+    for ext in tryExt:
+
+        altUrl = url.replace(".pdf", ext)
+        altFile = session.get(altUrl)
+
+        if(altFile.status_code == 200 and len(altFile.content) > 1000):
+            return altUrl
+    incrementErrorCount()       
+    return None
+
+
+
 console = Console()
 
 SENTINEL = object()
@@ -20,8 +56,6 @@ _start_event = threading.Event()
 
 _producer_done.clear()
 _start_event.clear()
-forbiddens = 0
-errors = 0
 
 def producerDone():
     _producer_done.set()
@@ -41,6 +75,10 @@ _download_count = 0
 _dataset = None
 _page = None
 _counter_lock = threading.Lock()
+
+errors = 0
+forbiddens = 0
+alternateCount = 0
 
 def setDatasetInfo(dataset, page):
     global _dataset, _page
@@ -62,6 +100,11 @@ def incrementErrorCount():
     global errors
     with _counter_lock:
         errors += 1
+
+def incrementAlternateCount():
+    global alternateCount
+    with _counter_lock:
+        alternateCount += 1
 
 def initPool():
     global _pool
@@ -121,6 +164,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
             filename = os.path.basename(url)
             
             path = os.path.join(os.path.join(out_dir,f"Dataset {_dataset}"), filename)
+
             # ---- Pre-fetch file size via HEAD ----
             
             total = None
@@ -147,7 +191,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
                 except Exception:
                     pass
 
-                if remote_size is not None and local_size == remote_size:
+                if remote_size is not None and local_size == remote_size and not ( 0.9 < remote_size / 2433 < 1.1 ): ## these small files are likely to be "No Images Produced" pdfs, so we should re-download them regardless of size match and check for an alternate extension
                     progress.update(
                         task_id,
                         total=remote_size,
@@ -181,7 +225,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
                                 progress.update(task_id, advance=len(chunk))
 
             except Exception as e:
-                console.print(f"[red]Download failed:[/red] {url} ({e})")
+                incrementErrorCount()
                 progress.update(task_id, advance=len(chunk)) ## file failed, move on to next one without leaving progress bar stuck at 0%
 
             finally:
@@ -191,10 +235,18 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
                     description=f"[green]W{worker_id}: {filename}[/green]"
                 )
 
+                if open(path, "rb").read(1000).startswith(b"%PDF") and b"ReportLab PDF Library" in open(path, "rb").read():
+                    
+                    altFile = alternateUrl(url, session)
+                    if altFile is not None:
+                        incrementAlternateCount()
+                        _pool.put(altFile)
+
                 incrementDownloadCount()
                 time.sleep(timeBetweenFiles/1000)  # Convert ms to seconds
 
                 _pool.task_done()
+                
         else:
             time.sleep(2)  # Sleep briefly if no URL, to avoid busy waiting
             
@@ -253,7 +305,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors}",
+                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount}",
                     style="bold white"
                 )
 
