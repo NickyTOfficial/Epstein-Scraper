@@ -48,9 +48,9 @@ def incrementDownloadCount():
         _download_count += 1
 
 
-def initPool(maxsize):
+def initPool():
     global _pool
-    _pool = queue.Queue(maxsize=maxsize)
+    _pool = queue.Queue()
 
 
 def updatePool(urls):

@@ -194,7 +194,7 @@ if "--reset" in sys.argv:
     last_page = None
 
 # Initialize pool once
-poolDownloader.initPool(poolSize)
+poolDownloader.initPool()
 
 try:
         
