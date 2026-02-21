@@ -23,14 +23,14 @@ try:
 except Exception:
     print("Error loading config.yaml, using default configuration.")
     config = {
-        "directory": os.getcwd(),
-        "fetchRetries": 5,
-        "timeBetweenFiles": 100,
-        "timeBetweenPages": 100,
-        "timeBetween403" : 20,
-        "downloadWorkers": 10,
+        "directory": os.getcwd(),  ## these are some fairly reliable settings I've found that don't run into ip blocking
+        "fetchRetries": 25,
+        "timeBetweenFiles": 120,
+        "timeBetweenPages": 4000,
+        "timeBetween403" : 3,
+        "downloadWorkers": 8,
         "datasets": [1, 2, 3, 4],
-        "poolSize": 450
+        "poolSize": 600
     }
 
 directory = config.get("directory")
