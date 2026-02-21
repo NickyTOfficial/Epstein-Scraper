@@ -9,6 +9,8 @@ It will resume downloading automatically, and attempt to find alternate file ext
 
 It will automatically skip files you have already downloaded in the output directory
 
+Logs are verbose, and can help determine removed or inaccessable files in the releases as well as unknown file extensions
+
 Use at your own risk, there may be CSAM in the files.
 
 ![download.gif](https://github.com/user-attachments/assets/faca3647-cf64-4614-8945-ff07b2a5ecd0)
