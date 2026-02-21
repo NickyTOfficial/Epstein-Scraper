@@ -1,4 +1,5 @@
 import os
+import random
 import threading
 import queue
 import time
@@ -31,7 +32,39 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
     ".xls",
     ".db",
     ".pluginpayloadattachment"
+
+    ## some more filetypes, haven't been found yet but are common
+
+    ".txt",
+    ".csv",
+    ".json",
+    ".xml",
+    ".log",
+    ".sql",
+    ".bak",
+    ".zip",
+    ".rar",
+    ".7z",
+    ".tar",
+    ".gz",
+    ".exe",
+    ".dll",
+    ".bin",
+    ".iso",
+    ".html",
+    ".htm",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".eml",
+    ".cfg"
+
+
 ]
+
+def randomDelay(delay):
+    delay = delay / 1000  # convert ms to seconds
+    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
 
 def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log, filepage=None):
 
@@ -49,9 +82,9 @@ def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log, filepage=None)
 
         # Explicitly ignore rate limiting and forbidden during probing
         if r.status_code in (403, 429, 503):
-            time.sleep(0.5)
+            randomDelay(500)  # Random delay for rate limiting errors
             continue
-        time.sleep(timeBetweenFiles / 1000)    
+        randomDelay(timeBetweenFiles)    
 
     incrementUnknownAlternateCount()
 
@@ -108,14 +141,14 @@ def head_with_retry(session, url, retries=3, base_delay=0.5):
 
             # Rate limiting or temporary denial
             if r.status_code in (403, 429, 503):
-                time.sleep(base_delay * (2 ** attempt))
+                randomDelay(base_delay * (2 ** attempt))
                 continue
 
             # Other non-200 responses return immediately
             return r
 
         except requests.RequestException:
-            time.sleep(base_delay * (2 ** attempt))
+            randomDelay(base_delay * (2 ** attempt))
 
     return None
 
@@ -289,7 +322,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
             pass
 
         if timeBetweenFiles > 0:
-            time.sleep(timeBetweenFiles / 1000)
+            randomDelay(timeBetweenFiles)
 
 
 
@@ -344,7 +377,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
                 if _pool.unfinished_tasks == 0:
                     break
 
-            time.sleep(0.2)
+            randomDelay(200)  # Random delay to avoid busy waiting
 
         _pool.join()
 

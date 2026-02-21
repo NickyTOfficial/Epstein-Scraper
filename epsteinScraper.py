@@ -1,4 +1,5 @@
 import json
+import random
 import threading
 from anaconda_cli_base import console
 import requests
@@ -68,11 +69,20 @@ s = requests.Session()
 
 s.headers.update({ ## Simulating a browser to increase authenticity of requests, reducing scraper detection
     
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36>",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
     "Referer": "https://www.justice.gov/",
     "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-User": "?1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-CH-UA": "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"",
+    "Sec-CH-UA-Mobile": "?0",
+    "Sec-CH-UA-Platform": "\"Linux\""
     
 })
 
@@ -82,6 +92,14 @@ s.cookies.set_cookie(verificationCookie)
 
 
 #---------------#
+
+
+def randomDelay(delay):
+    delay = delay / 1000  # convert ms to seconds
+    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
+
+
+
 # State management for resume functionality
 
 STATE_FILE = "scraper_state.json"
@@ -127,18 +145,18 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
             r = None
 
         if r is None:
-            time.sleep(delay)
+            randomDelay(delay)
             continue
 
         if r.status_code == 200:
             if b"EFTA" in r.content or b"ReportLab" in r.content or len(r.content) > 200:
                 return r
             else:
-                time.sleep(delay)
+                randomDelay(delay)
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
-            time.sleep(timeBetween403)
+            randomDelay(timeBetween403)
             poolDownloader.incrementForbiddenCount()
             continue
 
@@ -194,7 +212,7 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
         # Save state after each page completes
         save_state(dataset_num, page)
 
-        time.sleep(timeBetweenPages/1000)  # convert ms to seconds
+        randomDelay(timeBetweenPages)  # convert ms to seconds
 
 
 
