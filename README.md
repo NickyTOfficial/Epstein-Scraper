@@ -5,8 +5,10 @@ Configure the YAML file as you see fit, the options should be pretty self explan
 
 I implemented a download pool to more efficiently comb through the files. 
 
-It will resume downloading automatically. 
+It will resume downloading automatically, and attempt to find alternate file extensions when finding "No Images Produced" files
+
+It will automatically skip files you have already downloaded in the output directory
 
 Use at your own risk, there may be CSAM in the files.
 
-<img width="784" height="346" alt="image" src="https://github.com/user-attachments/assets/0758e789-dc1f-4056-925f-04396f106d34" />
+![download.gif](https://github.com/user-attachments/assets/faca3647-cf64-4614-8945-ff07b2a5ecd0)
