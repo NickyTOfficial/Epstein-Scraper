@@ -288,8 +288,25 @@ try:
     if last_dataset is not None:
         try:
             start_index = datasets.index(int(last_dataset))
+
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
+            )
+            poolDownloader.log_event(
+                poolDownloader.unknown_alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
+            )
         except ValueError:
             start_index = 0
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
+            )
+            poolDownloader.log_event(
+                poolDownloader.unknown_alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
+            )
 
     # Only iterate from the resume point onward
     for iterand in datasets[start_index:]:
@@ -309,5 +326,24 @@ except KeyboardInterrupt:
     poolDownloader.producerDone()
     poolDownloader.close_pool(downloadWorkers)
 
+    poolDownloader.log_event(
+        poolDownloader.failed_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
+    )
+    poolDownloader.log_event(
+        poolDownloader.unknown_alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
+    )
+
+
 finally:        
     poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
+
+    poolDownloader.log_event(
+        poolDownloader.failed_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+    )
+    poolDownloader.log_event(
+        poolDownloader.unknown_alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+    )
