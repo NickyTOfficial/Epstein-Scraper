@@ -33,15 +33,30 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
     ".pluginpayloadattachment"
 ]
 
-def alternateUrl(url, session):
-
+def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log):
     for ext in tryExt:
-
         altUrl = url.replace(".pdf", ext)
-        altFile = session.head(altUrl, allow_redirects=True)
-        if(altFile.status_code == 200):
+        try:
+            r = session.head(altUrl, allow_redirects=True, timeout=5)
+        except requests.RequestException:
+            continue
+
+        if r.status_code == 200:
             return altUrl
-    incrementErrorCount()       
+
+        # Explicitly ignore rate limiting and forbidden during probing
+        if r.status_code in (403, 429, 503):
+            time.sleep(0.5)
+            continue
+        time.sleep(timeBetweenFiles / 1000)    
+
+    incrementUnknownAlternateCount()
+
+    log_event(
+        unknown_alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_page} | {url}"
+    )
+
     return None
 
 
@@ -56,6 +71,8 @@ _start_event = threading.Event()
 _producer_done.clear()
 _start_event.clear()
 
+_log_lock = threading.Lock()
+
 def producerDone():
     _producer_done.set()
 
@@ -65,9 +82,6 @@ def signalStart():
 # Thread-safe pool
 _pool = None
 _workers = []
-_worker_status = {}
-_status_lock = threading.Lock()
-
 # Header
 
 _download_count = 0
@@ -78,12 +92,40 @@ _counter_lock = threading.Lock()
 errors = 0
 forbiddens = 0
 alternateCount = 0
+unknownAlternateCount = 0
+
+def head_with_retry(session, url, retries=3, base_delay=0.5):
+    for attempt in range(retries):
+        try:
+            r = session.head(url, allow_redirects=True, timeout=5)
+
+            # Success
+            if r.status_code == 200:
+                return r
+
+            # Rate limiting or temporary denial
+            if r.status_code in (403, 429, 503):
+                time.sleep(base_delay * (2 ** attempt))
+                continue
+
+            # Other non-200 responses return immediately
+            return r
+
+        except requests.RequestException:
+            time.sleep(base_delay * (2 ** attempt))
+
+    return None
 
 def setDatasetInfo(dataset, page):
     global _dataset, _page
     with _counter_lock:
         _dataset = dataset
         _page = page
+
+def log_event(log_path, message):
+    with _log_lock:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(message + "\n")
 
 def incrementDownloadCount():
     global _download_count
@@ -104,6 +146,11 @@ def incrementAlternateCount():
     global alternateCount
     with _counter_lock:
         alternateCount += 1
+
+def incrementUnknownAlternateCount():
+    global unknownAlternateCount
+    with _counter_lock:
+        unknownAlternateCount += 1
 
 def initPool():
     global _pool
@@ -145,7 +192,10 @@ def close_pool(num_workers):
 def wait_for_completion():
     _pool.join()
 
-def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10):
+def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, failed_log, unknown_alt_log):
+
+    current_dataset = _dataset
+
     task_id = progress.add_task(f"Worker {worker_id}", total=1)
     _start_event.wait()
 
@@ -157,12 +207,12 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
             break
 
         filename = os.path.basename(url)
-        path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
+        path = os.path.join(out_dir, f"Dataset {current_dataset}", filename)
 
         # ---- Skip logic ----
         if os.path.exists(path):
             try:
-                head = session.head(url, allow_redirects=True, timeout=10)
+                head = head_with_retry(session, url, retries=5, base_delay=1)
                 if head.status_code == 200:
                     remote_size = head.headers.get("Content-Length")
                     if remote_size:
@@ -209,12 +259,18 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
                         bytes_written += len(chunk)
                         progress.update(task_id, completed=bytes_written)
 
-        except Exception:
+        except Exception as e:
             incrementErrorCount()
             progress.update(
                 task_id,
                 description=f"[red]W{worker_id}: Failed[/red]"
             )
+
+            log_event(
+                failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_page} | {url} | {type(e).__name__} | {str(e)}"
+            )
+
             _pool.task_done()
             continue
 
@@ -235,7 +291,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles=10)
                 header = f.read(4096)
 
             if header.startswith(b"%PDF") and b"ReportLab PDF Library" in header:
-                altFile = alternateUrl(url, session)
+                altFile = alternateUrl(url, session, timeBetweenFiles, unknown_alt_log)
                 if altFile:
                     incrementAlternateCount()
                     _pool.put(altFile)
@@ -278,6 +334,12 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         TimeRemainingColumn(),
     )
 
+    log_dir = os.path.join("logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    failed_log = os.path.join(log_dir, "failed_downloads.log")
+    unknown_alt_log = os.path.join(log_dir, "unknown_alternates.log")
+
     global _workers
 
     layout = Layout()
@@ -293,7 +355,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         for i in range(workers):
             t = threading.Thread(
                 target=_download_worker,
-                args=(i, out_dir, session, progress, timeBetweenFiles),
+                args=(i, out_dir, session, progress, timeBetweenFiles, failed_log, unknown_alt_log),
             )
             t.start()
             _workers.append(t)
@@ -301,7 +363,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount}",
+                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
                     style="bold white"
                 )
 

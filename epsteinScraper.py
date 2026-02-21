@@ -91,9 +91,7 @@ def load_state():
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r") as f:
-                data = json.load(f)
-                poolDownloader.setDatasetInfo(last_dataset, last_page)
-
+                data = json.load(f, parse_int=lambda x: int(x) if x.isdigit() else x)
                 return data
         except Exception:
             pass
@@ -212,6 +210,8 @@ poolDownloader.initPool()
 poolDownloader.importPool(pending)
 
 
+
+
 try:
 
 
@@ -222,11 +222,36 @@ try:
     downloader_thread.start()
 
 
-    for iterand in datasets:
-        
-        updatePool(iterand, last_page if iterand == last_dataset else 0)
-        save_state(iterand, last_page if iterand == last_dataset else 0, poolDownloader.exportPool())
-        
+    start_index = 0
+
+    if last_dataset is not None:
+        try:
+            start_index = datasets.index(last_dataset)
+        except ValueError:
+            start_index = 0
+
+        # Get list index of where we left off (so we skip earlier datasets entirely)
+    start_index = 0
+    if last_dataset is not None:
+        try:
+            start_index = datasets.index(int(last_dataset))
+        except ValueError:
+            start_index = 0
+
+    # Only iterate from the resume point onward
+    for iterand in datasets[start_index:]:
+        # If we’re resuming mid-dataset, use last_page, otherwise start at 0
+        page_offset = last_page if iterand == last_dataset else 0
+
+        # Set dataset info before enqueuing URLs
+        poolDownloader.setDatasetInfo(iterand, page_offset)
+
+        # Enqueue pages starting at the correct offset
+        updatePool(iterand, page_offset)
+
+        # Save resume state **after** scraping that dataset’s pages
+        save_state(iterand, page_offset, poolDownloader.exportPool())
+            
 except KeyboardInterrupt:
     print("\nInterrupted. Saving state...")
 
