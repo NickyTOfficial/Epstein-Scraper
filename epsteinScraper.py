@@ -47,7 +47,7 @@ data = {
     "timeBetweenPages": timeBetweenPages,
     "fetchRetries": fetchRetries,
     "timeBetweenFiles": timeBetweenFiles,
-    "timebetween403": config.get("timeBetween403", 4),
+    "timebetween403": timeBetween403,
     "datasets": datasets,
     "downloadWorkers": downloadWorkers,
     "poolSize": poolSize
@@ -96,7 +96,7 @@ s.cookies.set_cookie(verificationCookie)
 
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
-    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
+    time.sleep(delay * (0.1 + random.random()))  # add some randomness to the delay to further reduce scraper detection
 
 
 
@@ -156,8 +156,8 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
-            randomDelay(timeBetween403)
             poolDownloader.incrementForbiddenCount()
+            randomDelay(timeBetween403)
             continue
 
     return None
@@ -166,53 +166,56 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 #---------------#
 
 
-def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPages, fetchRetries = fetchRetries):
-
-    page = dataset_page
-
-    files = []
+def updatePool(dataset_num, start_page=0):
+    page = start_page
+    seen_signatures = set()
 
     while True:
+        # Wait for pool space
+        while poolDownloader.poolSize() >= poolSize + 20:
+            time.sleep(0.5)
 
-        while(poolDownloader.poolSize() >= poolSize + 20):  # Wait until there's space in the pool
-            time.sleep(0.5)  # Avoid busy waiting
+        url = f"{datasetPattern.format(dataset_num)}?page={page}"
+        r = fetch_with_retry(url, s, retries=fetchRetries)
 
-        url = datasetPattern.format(dataset_num) + f"?page={page}"
-
-        r = fetch_with_retry(url, s, retries=fetchRetries, delay=timeBetweenPages, timeBetween403=timeBetween403)
         if r is None:
             poolDownloader.incrementErrorCount()
             break
+
         soup = BeautifulSoup(r.text, "html.parser")
 
-        page_files = set()
+        # Collect files on this page
+        page_files = {
+            (a["href"].split("/")[-1], page)
+            for a in soup.find_all("a", href=True)
+            if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+        }
 
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if "/epstein/files/" in href and "EFTA" in href: ## Adds all EFTA files found on this page to the pool
-                filename = href.split("/")[-1]
-                page_files.add((filename, page)) # store filename with page number for state saving
-
-        if page_files in files:
+        # Signature for duplicate detection
+        signature = tuple(sorted(f[0] for f in page_files))
+        if signature in seen_signatures:
             break
-        
-        files.append(page_files)
+        seen_signatures.add(signature)
 
-        poolObjectList = [(filePattern.format(dataset_num, filename, page), page) for filename, page in page_files] ## store as a tuple because python hates sets in queues for some reason, and we want to preserve page number for state saving
+        # Build pool objects
+        pool_objects = [
+            (filePattern.format(dataset_num, filename, page), page)
+            for filename, page in page_files
+        ]
 
-        poolDownloader.updatePool(poolObjectList) # add page number to pool objects for state saving
-
-        page += 1
-
+        poolDownloader.updatePool(pool_objects)
         poolDownloader.setDatasetInfo(dataset_num, page)
 
-        if poolDownloader.poolSize() >= poolSize: # delay download start until we have a decent buffer of files in the pool to prevent early starvation of download workers
+        # Start workers once pool is warm
+        if poolDownloader.poolSize() >= poolSize:
             poolDownloader.signalStart()
 
-        # Save state after each page completes
+        # Save state
         save_state(dataset_num, page)
 
-        randomDelay(timeBetweenPages)  # convert ms to seconds
+        page += 1
+        randomDelay(timeBetweenPages)
+
 
 
 
@@ -264,7 +267,7 @@ try:
         updatePool(iterand, page_offset)
 
         # Save resume state **after** scraping that dataset’s pages
-        save_state(iterand, page_offset, poolDownloader.exportPool())
+        save_state(iterand, page_offset)
             
 except KeyboardInterrupt:
     sys.exit(0)

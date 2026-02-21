@@ -64,7 +64,7 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
 
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
-    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
+    time.sleep(delay * (0.1 + random.random()))  # add some randomness to the delay to further reduce scraper detection
 
 def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log, filepage=None):
 
@@ -141,14 +141,14 @@ def head_with_retry(session, url, retries=3, base_delay=0.5):
 
             # Rate limiting or temporary denial
             if r.status_code in (403, 429, 503):
-                randomDelay(base_delay * (2 ** attempt))
+                randomDelay(base_delay )
                 continue
 
             # Other non-200 responses return immediately
             return r
 
         except requests.RequestException:
-            randomDelay(base_delay * (2 ** attempt))
+            randomDelay(base_delay)
 
     return None
 
