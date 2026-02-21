@@ -224,7 +224,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
         _url = poolObject[0]
         _filepage = poolObject[1]
 
-        if _url is SENTINEL:
+        if poolObject is SENTINEL:
             _pool.task_done()
             break
 

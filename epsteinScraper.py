@@ -145,14 +145,14 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
             r = None
 
         if r is None:
-            randomDelay(delay)
+            randomDelay(delay + 5 * attempt)  # increase delay with each retry
             continue
 
         if r.status_code == 200:
             if b"EFTA" in r.content or b"ReportLab" in r.content or len(r.content) > 200:
                 return r
             else:
-                randomDelay(delay)
+                randomDelay(delay + 5 * attempt)  # increase delay with each retry
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
@@ -171,48 +171,48 @@ def updatePool(dataset_num, start_page=0):
     seen_signatures = set()
 
     while True:
+        if (poolDownloader.poolSize() <= poolSize):
+            url = f"{datasetPattern.format(dataset_num)}?page={page}"
+            r = fetch_with_retry(url, s, retries=fetchRetries)
 
-        url = f"{datasetPattern.format(dataset_num)}?page={page}"
-        r = fetch_with_retry(url, s, retries=fetchRetries)
+            if r is None:
+                poolDownloader.incrementErrorCount()
+                break
 
-        if r is None:
-            poolDownloader.incrementErrorCount()
-            break
+            soup = BeautifulSoup(r.text, "html.parser")
 
-        soup = BeautifulSoup(r.text, "html.parser")
+            # Collect files on this page
+            page_files = {
+                (a["href"].split("/")[-1], page)
+                for a in soup.find_all("a", href=True)
+                if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+            }
 
-        # Collect files on this page
-        page_files = {
-            (a["href"].split("/")[-1], page)
-            for a in soup.find_all("a", href=True)
-            if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-        }
+            # Signature for duplicate detection
+            signature = tuple(sorted(f[0] for f in page_files))
+            if signature in seen_signatures:
+                poolDownloader.signalStart()
+                break
+            seen_signatures.add(signature)
 
-        # Signature for duplicate detection
-        signature = tuple(sorted(f[0] for f in page_files))
-        if signature in seen_signatures:
-            poolDownloader.signalStart()
-            break
-        seen_signatures.add(signature)
+            # Build pool objects
+            pool_objects = [
+                (filePattern.format(dataset_num, filename, page), page)
+                for filename, page in page_files
+            ]
 
-        # Build pool objects
-        pool_objects = [
-            (filePattern.format(dataset_num, filename, page), page)
-            for filename, page in page_files
-        ]
+            poolDownloader.updatePool(pool_objects)
+            poolDownloader.setDatasetInfo(dataset_num, page)
 
-        poolDownloader.updatePool(pool_objects)
-        poolDownloader.setDatasetInfo(dataset_num, page)
+            # Start workers once pool is warm
+            if poolDownloader.poolSize() >= poolSize:
+                poolDownloader.signalStart()
 
-        # Start workers once pool is warm
-        if poolDownloader.poolSize() >= poolSize:
-            poolDownloader.signalStart()
+            # Save state
+            save_state(dataset_num, page)
 
-        # Save state
-        save_state(dataset_num, page)
-
-        page += 1
-        randomDelay(timeBetweenPages)
+            page += 1
+            randomDelay(timeBetweenPages)
 
 
 
