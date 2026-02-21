@@ -157,7 +157,7 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
         if r.status_code in (403, 429, 500, 502, 503):
             poolDownloader.incrementForbiddenCount()
-            randomDelay(timeBetween403)
+            randomDelay(timeBetween403 + 5 * attempt)  # increase delay with each retry
             continue
 
     return None
