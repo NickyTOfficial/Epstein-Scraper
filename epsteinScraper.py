@@ -165,6 +165,7 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
 #---------------#
 
+possible_terminations = 0
 
 def updatePool(dataset_num, start_page=0):
     page = start_page
@@ -172,13 +173,12 @@ def updatePool(dataset_num, start_page=0):
 
     while True:
 
-        # throttle if pool is full
         if poolDownloader.poolSize() > poolSize:
             time.sleep(0.2)
             continue
 
-        url = f"{datasetPattern.format(dataset_num)}?page={page}"
-        r = fetch_with_retry(url, s, retries=fetchRetries)
+        requested_url = f"{datasetPattern.format(dataset_num)}?page={page}"
+        r = fetch_with_retry(requested_url, s, retries=fetchRetries)
 
         if r is None:
             poolDownloader.incrementErrorCount()
@@ -186,76 +186,74 @@ def updatePool(dataset_num, start_page=0):
 
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # Extract files
+        # --- Extract files ---
         page_files = sorted({
             a["href"].split("/")[-1]
             for a in soup.find_all("a", href=True)
             if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
         })
 
-        # Guard: ignore empty/partial pages
         if not page_files:
-            poolDownloader.log_event(
-                poolDownloader.failed_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | EMPTY PAGE"
-            )
-            break
+            break  # empty page = stop safely
 
+        # --- Canonical detection ---
+        canonical_tag = soup.find("link", rel="canonical")
+        canonical_href = canonical_tag["href"] if canonical_tag else ""
+
+        expected_page_fragment = f"?page={page}"
+        is_fallback = expected_page_fragment not in canonical_href
+
+        # Log inaccessible no-pagination fallback pages
         pagination = soup.find(class_="usa-pagination")
-        aria_final = False
 
-        if pagination:
-            aria_link = pagination.find("a", attrs={"aria-label": "First page"})
-            if aria_link:
-                aria_final = True
-
-        # ----------------------------
-        # CONFIRM TERMINATION
-        # ----------------------------
-        # We only stop if:
-        #   1) duplicate file set detected
-        #   OR
-        #   2) aria-final detected
-        # AND we confirm by probing next page
-
-        possible_terminal = False
-
-        if last_page_files is not None:
-            if page_files == last_page_files:
-                possible_terminal = True
-
-        if aria_final:
-            possible_terminal = True
-
-        if (
-            not pagination
-        ):
+        if not pagination and is_fallback:
             page_hash = hash(tuple(page_files))
-
             poolDownloader.log_event(
                 poolDownloader.failed_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | No pagination, inaccessible page | Hash {page_hash}"
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | "
+                f"Dataset {dataset_num} | Page {page} | "
+                f"No pagination, inaccessible page | Hash {page_hash}"
             )
 
-        if possible_terminal and page > start_page:
-            # Probe next page to confirm
-            probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
-            probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
+        # --- Duplicate detection with fallback protection ---
+            if (
+                last_page_files is not None
+                and page_files == last_page_files
+                and not is_fallback
+                and page > start_page
+            ):
+                # Confirm with forward probe
+                probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
+                probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
 
-            if probe_r:
-                probe_soup = BeautifulSoup(probe_r.text, "html.parser")
-                probe_files = sorted({
-                    a["href"].split("/")[-1]
-                    for a in probe_soup.find_all("a", href=True)
-                    if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-                })
+                if probe_r:
+                    probe_soup = BeautifulSoup(probe_r.text, "html.parser")
+                    probe_files = sorted({
+                        a["href"].split("/")[-1]
+                        for a in probe_soup.find_all("a", href=True)
+                        if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+                    })
 
-                if probe_files == page_files:
-                    # confirmed final page
-                    poolDownloader.signalStart()
-                    break
+                    if probe_files == page_files:
 
+                        # ---- END CONDITION CONFIRMED ----
+                        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
+                        poolDownloader.log_event(
+                            poolDownloader.failed_log,
+                            f"{timestamp} | Dataset {dataset_num} reached end condition"
+                        )
+
+                        poolDownloader.log_event(
+                            poolDownloader.unknown_alt_log,
+                            f"{timestamp} | Dataset {dataset_num} reached end condition"
+                        )
+
+                        poolDownloader.signalStart()
+                        poolDownloader.producerDone()
+                        break
+
+        # --- Queue files ---
         pool_objects = [
             (filePattern.format(dataset_num, filename), page, dataset_num)
             for filename in page_files
