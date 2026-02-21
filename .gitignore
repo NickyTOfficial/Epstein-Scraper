@@ -1,3 +1,5 @@
 /config.yaml
 /Epstein Lister
 scraper_state.json
+logs/failed_downloads.log
+logs/unknown_alternates.log
