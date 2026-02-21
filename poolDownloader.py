@@ -133,6 +133,9 @@ _globalDataset = None
 _globalPage = None
 _counter_lock = threading.Lock()
 
+lastDataset = None
+lastPage = None
+
 errors = 0
 forbiddens = 0
 alternateCount = 0
@@ -165,6 +168,9 @@ def setDatasetInfo(dataset, globalPage):
     with _counter_lock:
         _globalDataset = dataset
         _globalPage = globalPage
+
+def getLastLocation(): 
+    return (lastDataset, lastPage)
 
 def log_event(log_path, message):
     with _log_lock:
@@ -235,6 +241,9 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
         _url = poolObject[0]
         _filepage = poolObject[1]
         _dataset = poolObject[2]
+
+        lastDataset = _dataset
+        lastPage = _filepage
 
         filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {_dataset}", filename)

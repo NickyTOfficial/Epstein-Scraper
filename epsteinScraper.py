@@ -362,11 +362,13 @@ except KeyboardInterrupt:
 finally:        
     poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
 
+    datasetInfo = poolDownloader.getDatasetInfo
+
     poolDownloader.log_event(
         poolDownloader.failed_log,
-        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting at Dataset {datasetInfo[0]}, Page {datasetInfo[1]}"
     )
     poolDownloader.log_event(
         poolDownloader.unknown_alt_log,
-        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting at Dataset {datasetInfo[0]}, Page {datasetInfo[1]}"
     )
