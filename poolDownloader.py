@@ -253,6 +253,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
                                 description=f"[yellow]W{worker_id}: Skipped[/yellow]"
                             )
                             incrementDownloadCount()
+                            randomDelay(timeBetweenFiles)  # delay before next task to avoid hitting server too fast
                             _pool.task_done()
                             continue
             except Exception:

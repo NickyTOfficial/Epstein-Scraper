@@ -171,9 +171,6 @@ def updatePool(dataset_num, start_page=0):
     seen_signatures = set()
 
     while True:
-        # Wait for pool space
-        while poolDownloader.poolSize() >= poolSize + 20:
-            time.sleep(0.5)
 
         url = f"{datasetPattern.format(dataset_num)}?page={page}"
         r = fetch_with_retry(url, s, retries=fetchRetries)
@@ -194,6 +191,7 @@ def updatePool(dataset_num, start_page=0):
         # Signature for duplicate detection
         signature = tuple(sorted(f[0] for f in page_files))
         if signature in seen_signatures:
+            poolDownloader.signalStart()
             break
         seen_signatures.add(signature)
 
