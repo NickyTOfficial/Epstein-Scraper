@@ -95,15 +95,14 @@ def load_state():
                 return data
         except Exception:
             pass
-    return {"last_dataset": None, "last_page": None, "pending_urls": []}  # default state if no file or error
+    return {"last_dataset": None, "last_page": None}  # default state if no file or error
 
-def save_state(dataset_num, page_num, pending_urls):
+def save_state(dataset_num, page_num):
     try:
         with open(STATE_FILE, "w") as f:
             json.dump({
                 "last_dataset": dataset_num,
                 "last_page": page_num,
-                "pending_urls": pending_urls
             }, f)
     except Exception:
         pass
@@ -174,16 +173,16 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
             href = a["href"]
             if "/epstein/files/" in href and "EFTA" in href: ## Adds all EFTA files found on this page to the pool
                 filename = href.split("/")[-1]
-                page_files.add(filename)
-
-        page_files = sorted(page_files) # preserve file order
+                page_files.add((filename, page)) # store filename with page number for state saving
 
         if page_files in files:
             break
         
         files.append(page_files)
 
-        poolDownloader.updatePool([filePattern.format(dataset_num, filename) for filename in page_files])
+        poolObjectList = [(filePattern.format(dataset_num, filename, page), page) for filename, page in page_files] ## store as a tuple because python hates sets in queues for some reason, and we want to preserve page number for state saving
+
+        poolDownloader.updatePool(poolObjectList) # add page number to pool objects for state saving
 
         page += 1
 
@@ -193,7 +192,7 @@ def updatePool(dataset_num, dataset_page = 0, timeBetweenPages = timeBetweenPage
             poolDownloader.signalStart()
 
         # Save state after each page completes
-        save_state(dataset_num, page, poolDownloader.exportPool())
+        save_state(dataset_num, page)
 
         time.sleep(timeBetweenPages/1000)  # convert ms to seconds
 
@@ -205,9 +204,6 @@ state = load_state()
 pending = state.get("pending_urls", [])
 last_dataset = state.get("last_dataset")
 last_page = state.get("last_page")
-# Initialize pool once
-poolDownloader.initPool()
-poolDownloader.importPool(pending)
 
 
 
@@ -253,12 +249,6 @@ try:
         save_state(iterand, page_offset, poolDownloader.exportPool())
             
 except KeyboardInterrupt:
-    print("\nInterrupted. Saving state...")
-
-    pending = poolDownloader.exportPool()
-
-    poolDownloader.forceShutdown()
-    print("State saved and shutdown initiated.")
     sys.exit(0)
 
 poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt

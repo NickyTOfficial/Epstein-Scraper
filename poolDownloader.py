@@ -33,7 +33,10 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
     ".pluginpayloadattachment"
 ]
 
-def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log):
+def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log, filepage=None):
+
+    _filepage = filepage
+
     for ext in tryExt:
         altUrl = url.replace(".pdf", ext)
         try:
@@ -54,7 +57,7 @@ def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log):
 
     log_event(
         unknown_alt_log,
-        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_page} | {url}"
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_filepage} | {url}"
     )
 
     return None
@@ -80,13 +83,13 @@ def signalStart():
     _start_event.set()
 
 # Thread-safe pool
-_pool = None
+_pool = queue.Queue()
 _workers = []
 # Header
 
 _download_count = 0
 _dataset = None
-_page = None
+_globalPage = None
 _counter_lock = threading.Lock()
 
 errors = 0
@@ -116,11 +119,11 @@ def head_with_retry(session, url, retries=3, base_delay=0.5):
 
     return None
 
-def setDatasetInfo(dataset, page):
-    global _dataset, _page
+def setDatasetInfo(dataset, globalPage):
+    global _dataset, _globalPage
     with _counter_lock:
         _dataset = dataset
-        _page = page
+        _globalPage = globalPage
 
 def log_event(log_path, message):
     with _log_lock:
@@ -152,35 +155,18 @@ def incrementUnknownAlternateCount():
     with _counter_lock:
         unknownAlternateCount += 1
 
-def initPool():
-    global _pool
-    _pool = queue.Queue()
 
-
-def updatePool(urls):
-    for url in urls:
-        _pool.put(url)
-
-def setPool(urls):
-    global _pool
-    with _pool.mutex:
-        _pool.queue.clear()
-        for url in urls:
-            _pool.queue.append(url)
+def updatePool(poolObjects): ## force as tuple
+    _poolObjects = [(obj[0], obj[1]) for obj in poolObjects] # ensure it's a list of tuples
+    for obj in _poolObjects:
+        _pool.put(obj)
 
 
 def poolSize():
-    return _pool.qsize()
-
-def exportPool():
-    items = []
-    with _pool.mutex:
-        items = list(_pool.queue)
-    return items
-
-def importPool(urls):
-    for url in urls:
-        _pool.put(url)
+    if _pool is not None:
+        return _pool.qsize()
+    else:
+        return 0
 
 def close_pool(num_workers):
 
@@ -200,19 +186,22 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
     _start_event.wait()
 
     while True:
-        url = _pool.get()
+        poolObject = _pool.get()  # get the tuple (url, page)
 
-        if url is SENTINEL:
+        _url = poolObject[0]
+        _filepage = poolObject[1]
+
+        if _url is SENTINEL:
             _pool.task_done()
             break
 
-        filename = os.path.basename(url)
+        filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {current_dataset}", filename)
 
         # ---- Skip logic ----
         if os.path.exists(path):
             try:
-                head = head_with_retry(session, url, retries=5, base_delay=1)
+                head = head_with_retry(session, _url, retries=5, base_delay=1)
                 if head.status_code == 200:
                     remote_size = head.headers.get("Content-Length")
                     if remote_size:
@@ -237,7 +226,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
                 pass
 
         try:
-            with session.get(url, stream=True) as r:
+            with session.get(_url, stream=True) as r:
                 r.raise_for_status()
                 total = int(r.headers.get("Content-Length", 0))
 
@@ -268,7 +257,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
 
             log_event(
                 failed_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_page} | {url} | {type(e).__name__} | {str(e)}"
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_filepage} | {_url} | {type(e).__name__} | {str(e)}"
             )
 
             _pool.task_done()
@@ -291,36 +280,17 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, fa
                 header = f.read(4096)
 
             if header.startswith(b"%PDF") and b"ReportLab PDF Library" in header:
-                altFile = alternateUrl(url, session, timeBetweenFiles, unknown_alt_log)
+                altFile = alternateUrl(_url, session, timeBetweenFiles, unknown_alt_log, filepage=_filepage)
                 if altFile:
                     incrementAlternateCount()
-                    _pool.put(altFile)
+                    _pool.put((altFile, _filepage))  # add alternate to pool with page info for state saving
 
         except Exception:
             pass
 
         if timeBetweenFiles > 0:
             time.sleep(timeBetweenFiles / 1000)
-            
 
-
-
-def forceShutdown():
-    global _workers
-
-    _producer_done.set()
-
-    # Empty queue safely
-    while not _pool.empty():
-        try:
-            _pool.get_nowait()
-            _pool.task_done()
-        except queue.Empty:
-            break
-
-    # Send stop signal to all workers
-    for _ in _workers:
-        _pool.put(SENTINEL)
 
 
 def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
@@ -363,7 +333,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_dataset} | Page: {_page} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
+                    f"Dataset: {_dataset} | Page: {_globalPage} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
                     style="bold white"
                 )
 
