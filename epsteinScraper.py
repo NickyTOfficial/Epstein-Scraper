@@ -212,46 +212,49 @@ def updatePool(dataset_num, start_page=0):
                 poolDownloader.failed_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | "
                 f"Dataset {dataset_num} | Page {page} | "
-                f"No pagination, inaccessible page | Hash {page_hash}"
+                f"No pagination, inaccessible page | {requested_url}"
             )
+            page += 1
+            randomDelay(timeBetweenPages)
+            continue
 
         # --- Duplicate detection with fallback protection ---
-            if (
-                last_page_files is not None
-                and page_files == last_page_files
-                and not is_fallback
-                and page > start_page
-            ):
-                # Confirm with forward probe
-                probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
-                probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
+        if (
+            last_page_files is not None
+            and page_files == last_page_files
+            and not is_fallback
+            and page > start_page
+        ):
+            # Confirm with forward probe
+            probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
+            probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
 
-                if probe_r:
-                    probe_soup = BeautifulSoup(probe_r.text, "html.parser")
-                    probe_files = sorted({
-                        a["href"].split("/")[-1]
-                        for a in probe_soup.find_all("a", href=True)
-                        if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-                    })
+            if probe_r:
+                probe_soup = BeautifulSoup(probe_r.text, "html.parser")
+                probe_files = sorted({
+                    a["href"].split("/")[-1]
+                    for a in probe_soup.find_all("a", href=True)
+                    if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+                })
 
-                    if probe_files == page_files:
+                if probe_files == page_files:
 
-                        # ---- END CONDITION CONFIRMED ----
-                        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                    # ---- END CONDITION CONFIRMED ----
+                    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-                        poolDownloader.log_event(
-                            poolDownloader.failed_log,
-                            f"{timestamp} | Dataset {dataset_num} reached end condition"
-                        )
+                    poolDownloader.log_event(
+                        poolDownloader.failed_log,
+                        f"{timestamp} | Dataset {dataset_num} reached end condition"
+                    )
 
-                        poolDownloader.log_event(
-                            poolDownloader.unknown_alt_log,
-                            f"{timestamp} | Dataset {dataset_num} reached end condition"
-                        )
+                    poolDownloader.log_event(
+                        poolDownloader.unknown_alt_log,
+                        f"{timestamp} | Dataset {dataset_num} reached end condition"
+                    )
 
-                        poolDownloader.signalStart()
-                        poolDownloader.producerDone()
-                        break
+                    poolDownloader.signalStart()
+                    poolDownloader.producerDone()
+                    break
 
         # --- Queue files ---
         pool_objects = [
