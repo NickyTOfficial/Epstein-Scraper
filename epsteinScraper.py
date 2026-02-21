@@ -343,7 +343,7 @@ try:
         updatePool(iterand, page_offset)
 
         # Save resume state **after** scraping that dataset’s pages
-        save_state(iterand, page_offset)
+        save_state(poolDownloader.getLastLocation()[0],poolDownloader.getLastLocation()[1])
             
 except KeyboardInterrupt:
     poolDownloader.producerDone()
