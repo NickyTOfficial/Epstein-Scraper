@@ -96,7 +96,7 @@ s.cookies.set_cookie(verificationCookie)
 
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
-    time.sleep(delay * (0.1 + random.random()))  # add some randomness to the delay to further reduce scraper detection
+    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
 
 
 
