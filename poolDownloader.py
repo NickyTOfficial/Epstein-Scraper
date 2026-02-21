@@ -133,8 +133,8 @@ _globalDataset = None
 _globalPage = None
 _counter_lock = threading.Lock()
 
-lastDataset = None
-lastPage = None
+
+
 
 errors = 0
 forbiddens = 0
@@ -163,14 +163,22 @@ def head_with_retry(session, url, retries=3, base_delay=0.5):
 
     return None
 
+
+
 def setDatasetInfo(dataset, globalPage):
     global _globalDataset, _globalPage
     with _counter_lock:
         _globalDataset = dataset
         _globalPage = globalPage
 
+
+def setLastLocation(lastLocation):
+    global _lastLocation
+    with _counter_lock:
+        _lastLocation = lastLocation
+
 def getLastLocation(): 
-    return (lastDataset, lastPage)
+    return (_lastLocation)
 
 def log_event(log_path, message):
     with _log_lock:
@@ -242,8 +250,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
         _filepage = poolObject[1]
         _dataset = poolObject[2]
 
-        lastDataset = _dataset
-        lastPage = _filepage
+        setLastLocation((_dataset,_filepage))
 
         filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
