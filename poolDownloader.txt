@@ -57,36 +57,28 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
     ".jpeg",
     ".png",
     ".eml",
-    ".cfg",
-    "xlsx",
-    ".pptx",
+    ".cfg"
 
 
 ]
 
-failed_log = os.path.join("logs", "failed_downloads.log")
-unknown_alt_log = os.path.join("logs", "unknown_alternates.log")
-
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
-    time.sleep(delay * (0.1 + random.random()))  # add some randomness to the delay to further reduce scraper detection
+    time.sleep(delay * (0.5 + random.random()))  # add some randomness to the delay to further reduce scraper detection
 
-def alternateUrl(poolObject, session, timeBetweenFiles):
+def alternateUrl(url, session, timeBetweenFiles, unknown_alt_log, filepage=None):
 
-    _url = poolObject[0]
-    _filepage = poolObject[1]
-    _dataset = poolObject[2]
-
+    _filepage = filepage
 
     for ext in tryExt:
-        altUrl = _url.replace(".pdf", ext)
+        altUrl = url.replace(".pdf", ext)
         try:
             r = session.head(altUrl, allow_redirects=True, timeout=5)
         except requests.RequestException:
             continue
 
         if r.status_code == 200:
-            return (altUrl, _filepage, _dataset)  # return as tuple with page and dataset info for state saving
+            return altUrl
 
         # Explicitly ignore rate limiting and forbidden during probing
         if r.status_code in (403, 429, 503):
@@ -98,7 +90,7 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
 
     log_event(
         unknown_alt_log,
-        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_globalDataset} | Page {_filepage} | {_url}"
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_dataset} | Page {_filepage} | {url}"
     )
 
     return None
@@ -129,7 +121,7 @@ _workers = []
 # Header
 
 _download_count = 0
-_globalDataset = None
+_dataset = None
 _globalPage = None
 _counter_lock = threading.Lock()
 
@@ -161,9 +153,9 @@ def head_with_retry(session, url, retries=3, base_delay=0.5):
     return None
 
 def setDatasetInfo(dataset, globalPage):
-    global _globalDataset, _globalPage
+    global _dataset, _globalPage
     with _counter_lock:
-        _globalDataset = dataset
+        _dataset = dataset
         _globalPage = globalPage
 
 def log_event(log_path, message):
@@ -198,7 +190,7 @@ def incrementUnknownAlternateCount():
 
 
 def updatePool(poolObjects): ## force as tuple
-    _poolObjects = [(obj[0], obj[1], obj[2]) for obj in poolObjects] # ensure it's a list of triples
+    _poolObjects = [(obj[0], obj[1]) for obj in poolObjects] # ensure it's a list of tuples
     for obj in _poolObjects:
         _pool.put(obj)
 
@@ -219,25 +211,25 @@ def close_pool(num_workers):
 def wait_for_completion():
     _pool.join()
 
-def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
+def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, failed_log, unknown_alt_log):
+
+    current_dataset = _dataset
 
     task_id = progress.add_task(f"Worker {worker_id}", total=1)
     _start_event.wait()
 
     while True:
-
         poolObject = _pool.get()  # get the tuple (url, page)
+
+        _url = poolObject[0]
+        _filepage = poolObject[1]
 
         if poolObject is SENTINEL:
             _pool.task_done()
             break
 
-        _url = poolObject[0]
-        _filepage = poolObject[1]
-        _dataset = poolObject[2]
-
         filename = os.path.basename(_url)
-        path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
+        path = os.path.join(out_dir, f"Dataset {current_dataset}", filename)
 
         # ---- Skip logic ----
         if os.path.exists(path):
@@ -261,6 +253,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                                 description=f"[yellow]W{worker_id}: Skipped[/yellow]"
                             )
                             incrementDownloadCount()
+                            randomDelay(timeBetweenFiles)  # delay before next task to avoid hitting server too fast
                             _pool.task_done()
                             continue
             except Exception:
@@ -321,10 +314,10 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                 header = f.read(4096)
 
             if header.startswith(b"%PDF") and b"ReportLab PDF Library" in header:
-                altObject = alternateUrl(poolObject, session, timeBetweenFiles, unknown_alt_log, filepage=_filepage)
-                if altObject:
+                altFile = alternateUrl(_url, session, timeBetweenFiles, unknown_alt_log, filepage=_filepage)
+                if altFile:
                     incrementAlternateCount()
-                    _pool.put(altObject)  # add alternate to pool with page info for state saving
+                    _pool.put((altFile, _filepage))  # add alternate to pool with page info for state saving
 
         except Exception:
             pass
@@ -348,6 +341,9 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
     log_dir = os.path.join("logs")
     os.makedirs(log_dir, exist_ok=True)
 
+    failed_log = os.path.join(log_dir, "failed_downloads.log")
+    unknown_alt_log = os.path.join(log_dir, "unknown_alternates.log")
+
     global _workers
 
     layout = Layout()
@@ -363,7 +359,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         for i in range(workers):
             t = threading.Thread(
                 target=_download_worker,
-                args=(i, out_dir, session, progress, timeBetweenFiles),
+                args=(i, out_dir, session, progress, timeBetweenFiles, failed_log, unknown_alt_log),
             )
             t.start()
             _workers.append(t)
@@ -371,7 +367,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         while True:
             with _counter_lock:
                 header_text = Text(
-                    f"Dataset: {_globalDataset} | Page: {_globalPage} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
+                    f"Dataset: {_dataset} | Page: {_globalPage} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
                     style="bold white"
                 )
 
