@@ -3,3 +3,5 @@
 scraper_state.json
 logs/failed_downloads.log
 logs/unknown_alternates.log
+epsteinScraper.txt
+poolDownloader.txt

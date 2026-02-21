@@ -168,51 +168,111 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
 def updatePool(dataset_num, start_page=0):
     page = start_page
-    seen_signatures = set()
+    last_page_files = None
+    fake_retries = 0
+    MAX_FAKE = 5   # allow several fake redirect pages in a row
 
     while True:
-        if (poolDownloader.poolSize() <= poolSize):
-            url = f"{datasetPattern.format(dataset_num)}?page={page}"
-            r = fetch_with_retry(url, s, retries=fetchRetries)
 
-            if r is None:
-                poolDownloader.incrementErrorCount()
-                break
+        # throttle if pool is full
+        if poolDownloader.poolSize() > poolSize:
+            time.sleep(0.2)
+            continue
 
-            soup = BeautifulSoup(r.text, "html.parser")
+        url = f"{datasetPattern.format(dataset_num)}?page={page}"
+        r = fetch_with_retry(url, s, retries=fetchRetries)
 
-            # Collect files on this page
-            page_files = {
-                (a["href"].split("/")[-1], page)
-                for a in soup.find_all("a", href=True)
-                if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-            }
+        if r is None:
+            poolDownloader.incrementErrorCount()
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | Fetch Failed"
+            )
+            break
 
-            # Signature for duplicate detection
-            signature = tuple(sorted(f[0] for f in page_files))
-            if signature in seen_signatures:
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # Extract files on this page
+        page_files = {
+            a["href"].split("/")[-1]
+            for a in soup.find_all("a", href=True)
+            if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+        }
+
+        pagination = soup.find(class_="usa-pagination")
+
+        # ----------------------------------------------------
+        # CASE 1: ARIA FINAL PAGE (true end of multi-page dataset)
+        # ----------------------------------------------------
+        if pagination:
+            aria_final = pagination.find("a", attrs={"aria-label": "First page"})
+            if aria_final:
+                # queue files before stopping
+                pool_objects = [
+                    (filePattern.format(dataset_num, filename, page), page, dataset_num)
+                    for filename in page_files
+                ]
+                poolDownloader.updatePool(pool_objects)
                 poolDownloader.signalStart()
                 break
-            seen_signatures.add(signature)
 
-            # Build pool objects
-            pool_objects = [
-                (filePattern.format(dataset_num, filename, page), page)
-                for filename, page in page_files
-            ]
+        # ----------------------------------------------------
+        # CASE 2: REDIRECT LOOP (Dataset 6 & 7)
+        # ----------------------------------------------------
+        # page_files identical to previous page → redirect loop → final page
+        if last_page_files is not None and page_files == last_page_files:
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Redirect loop detected → FINAL PAGE"
+            )
+            poolDownloader.signalStart()
+            break
 
-            poolDownloader.updatePool(pool_objects)
-            poolDownloader.setDatasetInfo(dataset_num, page)
+        # ----------------------------------------------------
+        # CASE 3: FAKE REDIRECT PAGE (Dataset 9 weird pages)
+        # ----------------------------------------------------
+        # no pagination + files DIFFERENT from previous page = fake redirect
+        if not pagination and last_page_files is not None and page_files != last_page_files:
+            fake_retries += 1
 
-            # Start workers once pool is warm
-            if poolDownloader.poolSize() >= poolSize:
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | FAKE REDIRECT ({fake_retries})"
+            )
+
+            if fake_retries >= MAX_FAKE:
                 poolDownloader.signalStart()
-
-            # Save state
-            save_state(dataset_num, page)
+                break
 
             page += 1
             randomDelay(timeBetweenPages)
+            continue
+
+        # reset fake counter on real pages
+        fake_retries = 0
+
+        # ----------------------------------------------------
+        # CASE 4: REAL PAGE → QUEUE FILES
+        # ----------------------------------------------------
+        pool_objects = [
+            (filePattern.format(dataset_num, filename, page), page, dataset_num)
+            for filename in page_files
+        ]
+
+        poolDownloader.updatePool(pool_objects)
+        poolDownloader.setDatasetInfo(dataset_num, page)
+
+        if poolDownloader.poolSize() >= poolSize:
+            poolDownloader.signalStart()
+
+        save_state(dataset_num, page)
+
+        # track file signature for redirect-loop detection
+        last_page_files = page_files
+
+        page += 1
+        randomDelay(timeBetweenPages)
+
 
 
 
@@ -250,8 +310,25 @@ try:
     if last_dataset is not None:
         try:
             start_index = datasets.index(int(last_dataset))
+
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
+            )
+            poolDownloader.log_event(
+                poolDownloader.unknown_alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
+            )
         except ValueError:
             start_index = 0
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
+            )
+            poolDownloader.log_event(
+                poolDownloader.unknown_alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
+            )
 
     # Only iterate from the resume point onward
     for iterand in datasets[start_index:]:
@@ -268,7 +345,27 @@ try:
         save_state(iterand, page_offset)
             
 except KeyboardInterrupt:
-    sys.exit(0)
+    poolDownloader.producerDone()
+    poolDownloader.close_pool(downloadWorkers)
 
-poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
-poolDownloader.producerDone()  # Signal that the producer is done adding URLs
+    poolDownloader.log_event(
+        poolDownloader.failed_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
+    )
+    poolDownloader.log_event(
+        poolDownloader.unknown_alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
+    )
+
+
+finally:        
+    poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
+
+    poolDownloader.log_event(
+        poolDownloader.failed_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+    )
+    poolDownloader.log_event(
+        poolDownloader.unknown_alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting"
+    )

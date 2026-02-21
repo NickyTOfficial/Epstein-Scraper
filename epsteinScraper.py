@@ -168,11 +168,11 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
 def updatePool(dataset_num, start_page=0):
     page = start_page
-    empty_retries = 0
+    last_page_files = None
 
     while True:
 
-        # Only fetch new pages when pool has room
+        # throttle if pool is full
         if poolDownloader.poolSize() > poolSize:
             time.sleep(0.2)
             continue
@@ -186,58 +186,79 @@ def updatePool(dataset_num, start_page=0):
 
         soup = BeautifulSoup(r.text, "html.parser")
 
+        # Extract files
+        page_files = sorted({
+            a["href"].split("/")[-1]
+            for a in soup.find_all("a", href=True)
+            if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+        })
+
+        # Guard: ignore empty/partial pages
+        if not page_files:
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | EMPTY PAGE"
+            )
+            break
+
         pagination = soup.find(class_="usa-pagination")
+        aria_final = False
 
-        if not pagination:
-            # Fake end-of-dataset page (DOJ placeholder)
-            empty_retries += 1
+        if pagination:
+            aria_link = pagination.find("a", attrs={"aria-label": "First page"})
+            if aria_link:
+                aria_final = True
 
-            if empty_retries <= 3:
-                randomDelay(timeBetweenPages)
-                continue
+        # ----------------------------
+        # CONFIRM TERMINATION
+        # ----------------------------
+        # We only stop if:
+        #   1) duplicate file set detected
+        #   OR
+        #   2) aria-final detected
+        # AND we confirm by probing next page
 
-            # After 3 retries, advance past it
+        possible_terminal = False
 
-            poolDownloader.incrementErrorCount()
+        if last_page_files is not None:
+            if page_files == last_page_files:
+                possible_terminal = True
+
+        if aria_final:
+            possible_terminal = True
+
+        if (
+            not pagination
+        ):
+            page_hash = hash(tuple(page_files))
 
             poolDownloader.log_event(
                 poolDownloader.failed_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | No pagination, inaccessible page"
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} | Page {page} | No pagination, inaccessible page | Hash {page_hash}"
             )
 
+        if possible_terminal and page > start_page:
+            # Probe next page to confirm
+            probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
+            probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
 
-            empty_retries = 0
-            page += 1
-            randomDelay(timeBetweenPages)
-            continue
+            if probe_r:
+                probe_soup = BeautifulSoup(probe_r.text, "html.parser")
+                probe_files = sorted({
+                    a["href"].split("/")[-1]
+                    for a in probe_soup.find_all("a", href=True)
+                    if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
+                })
 
-        # Reset retry counter on real pages
-        empty_retries = 0
+                if probe_files == page_files:
+                    # confirmed final page
+                    poolDownloader.signalStart()
+                    break
 
-        # Identify pagination buttons
-        has_next = bool(pagination.find(class_="usa-pagination__next"))
-        has_first = bool(pagination.find(class_="usa-pagination__first"))
-
-        if has_first and not has_next:
-            # This is the actual final page of the dataset
-            poolDownloader.signalStart()
-            break
-
-        page_files = {
-            (a["href"].split("/")[-1], page)
-            for a in soup.find_all("a", href=True)
-            if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-        }
-
-        # If no files but pagination exists, just advance
-        if not page_files:
-            page += 1
-            randomDelay(timeBetweenPages)
-            continue
 
         pool_objects = [
-            (filePattern.format(dataset_num, filename, page), page, dataset_num)
-            for filename, page in page_files
+            (filePattern.format(dataset_num, filename), page, dataset_num)
+            for filename in page_files
         ]
 
         poolDownloader.updatePool(pool_objects)
@@ -248,6 +269,7 @@ def updatePool(dataset_num, start_page=0):
 
         save_state(dataset_num, page)
 
+        last_page_files = page_files
         page += 1
         randomDelay(timeBetweenPages)
 
