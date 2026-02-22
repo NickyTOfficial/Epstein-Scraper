@@ -25,10 +25,10 @@ except Exception:
     config = {
         "directory": os.getcwd(),  ## these are some fairly reliable settings I've found that don't run into ip blocking
         "fetchRetries": 25,
-        "timeBetweenFiles": 120,
-        "timeBetweenPages": 4000,
-        "timeBetween403" : 3,
-        "downloadWorkers": 8,
+        "timeBetweenFiles": 40,
+        "timeBetweenPages": 40,
+        "timeBetween403" : 4,
+        "downloadWorkers": 18,
         "datasets": [1, 2, 3, 4],
         "poolSize": 600
     }

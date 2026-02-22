@@ -373,7 +373,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         Layout(progress, name="body")
     )
 
-    with Live(layout, refresh_per_second=10):
+    with Live(layout, refresh_per_second=24):
 
         # Start workers
         for i in range(workers):
