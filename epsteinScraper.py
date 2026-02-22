@@ -6,7 +6,6 @@ import requests
 import os
 import yaml
 import time
-import sys
 from bs4 import BeautifulSoup
 import poolDownloader
 
@@ -115,7 +114,11 @@ def load_state():
             pass
     return {"last_dataset": None, "last_page": None}  # default state if no file or error
 
-def save_state(dataset_num, page_num):
+def save_state(location):
+
+    dataset_num = location[0]
+    page_num = location[1]
+
     try:
         with open(STATE_FILE, "w") as f:
             json.dump({
@@ -258,7 +261,7 @@ def updatePool(dataset_num, start_page=0):
 
         # --- Queue files ---
         pool_objects = [
-            (filePattern.format(dataset_num, filename), page, dataset_num)
+            ( dataset_num, page, filePattern.format(dataset_num, filename))
             for filename in page_files
         ]
 
@@ -268,7 +271,8 @@ def updatePool(dataset_num, start_page=0):
         if poolDownloader.poolSize() >= poolSize:
             poolDownloader.signalStart()
 
-        save_state(dataset_num, page)
+        if(poolDownloader.isStarted()):
+            save_state(poolDownloader.getLastLocation())
 
         last_page_files = page_files
         page += 1
@@ -286,8 +290,6 @@ last_dataset = state.get("last_dataset")
 last_page = state.get("last_page")
 
 
-
-
 try:
 
 
@@ -297,16 +299,6 @@ try:
     )
     downloader_thread.start()
 
-
-    start_index = 0
-
-    if last_dataset is not None:
-        try:
-            start_index = datasets.index(last_dataset)
-        except ValueError:
-            start_index = 0
-
-        # Get list index of where we left off (so we skip earlier datasets entirely)
     start_index = 0
     if last_dataset is not None:
         try:
@@ -346,8 +338,11 @@ try:
         save_state(poolDownloader.getLastLocation()[0],poolDownloader.getLastLocation()[1])
             
 except KeyboardInterrupt:
+
+    poolDownloader.signalStart()
+    poolDownloader.empty_pool(downloadWorkers)
     poolDownloader.producerDone()
-    poolDownloader.close_pool(downloadWorkers)
+    
 
     poolDownloader.log_event(
         poolDownloader.failed_log,

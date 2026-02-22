@@ -72,10 +72,10 @@ def randomDelay(delay):
 
 def alternateUrl(poolObject, session, timeBetweenFiles):
 
-    _url = poolObject[0]
+    
+    _dataset = poolObject[0]
     _filepage = poolObject[1]
-    _dataset = poolObject[2]
-
+    _url = poolObject[2]
 
     for ext in tryExt:
         altUrl = _url.replace(".pdf", ext)
@@ -122,6 +122,9 @@ def producerDone():
 def signalStart():
     _start_event.set()
 
+def isStarted():
+    return _start_event.is_set()
+
 # Thread-safe pool
 _pool = queue.Queue()
 _workers = []
@@ -131,8 +134,16 @@ _download_count = 0
 _globalDataset = None
 _globalPage = None
 _counter_lock = threading.Lock()
+_lastLocation = (-1,-1)
 
 
+def setLastLocation(lastLocation):
+    global _lastLocation
+    with _counter_lock:
+        _lastLocation = lastLocation
+
+def getLastLocation(): 
+    return (_lastLocation)
 
 
 errors = 0
@@ -169,15 +180,6 @@ def setDatasetInfo(dataset, globalPage):
     with _counter_lock:
         _globalDataset = dataset
         _globalPage = globalPage
-
-
-def setLastLocation(lastLocation):
-    global _lastLocation
-    with _counter_lock:
-        _lastLocation = lastLocation
-
-def getLastLocation(): 
-    return (_lastLocation)
 
 def log_event(log_path, message):
     with _log_lock:
@@ -222,12 +224,24 @@ def poolSize():
     else:
         return 0
 
-def close_pool(num_workers):
+def empty_pool(numWorkers):
 
-    print("Closing pool and waiting for workers to finish...")
+    ## Immediately remove all pending items from the pool
 
-    for _ in range(num_workers):
+    removed = 0
+
+    while True:
+        try:
+            _pool.get_nowait()
+            _pool.task_done()
+            removed += 1
+        except queue.Empty:
+            break
+
+    for _ in range(numWorkers):
         _pool.put(SENTINEL)
+
+    return removed
 
 def wait_for_completion():
     _pool.join()
@@ -239,17 +253,19 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
 
     while True:
 
-        poolObject = _pool.get()  # get the tuple (url, page)
+        try:   
+            poolObject = _pool.get(timeout=1)  # get the tuple (url, page)
+        except queue.Empty:
+            continue
 
         if poolObject is SENTINEL:
             _pool.task_done()
             break
 
-        _url = poolObject[0]
-        _filepage = poolObject[1]
-        _dataset = poolObject[2]
 
-        setLastLocation((_dataset,_filepage))
+        _dataset = poolObject[0]
+        _filepage = poolObject[1]
+        _url = poolObject[2]
 
         filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
@@ -325,6 +341,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
             description=f"[green]W{worker_id}: {filename}[/green]"
         )
 
+        setLastLocation((_dataset,_filepage))
         incrementDownloadCount()
 
         # Mark task complete immediately
@@ -336,7 +353,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                 header = f.read(4096)
 
             if header.startswith(b"%PDF") and b"ReportLab PDF Library" in header:
-                altObject = alternateUrl(poolObject, session, timeBetweenFiles, unknown_alt_log, filepage=_filepage)
+                altObject = alternateUrl(poolObject, session, timeBetweenFiles)
                 if altObject:
                     incrementAlternateCount()
                     _pool.put(altObject)  # add alternate to pool with page info for state saving
@@ -344,8 +361,11 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
         except Exception:
             pass
 
-        if timeBetweenFiles > 0:
-            randomDelay(timeBetweenFiles)
+
+        finally:
+            
+            if timeBetweenFiles > 0:
+                randomDelay(timeBetweenFiles)
 
 
 
@@ -372,7 +392,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         Layout(progress, name="body")
     )
 
-    with Live(layout, refresh_per_second=30, screen=True):
+    with Live(layout, refresh_per_second=30):
 
         # Start workers
         for i in range(workers):
