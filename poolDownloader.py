@@ -6,7 +6,6 @@ import time
 import requests
 from rich.progress import Progress, BarColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
 from rich.live import Live
-from rich.table import Table
 from rich.console import Console
 from rich.layout import Layout
 from rich.panel import Panel
@@ -274,7 +273,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                                 task_id,
                                 total=remote_size,
                                 completed=remote_size,
-                                description=f"[yellow]W{worker_id}: Skipped[/yellow]"
+                                description=f"[yellow]W{worker_id}: {filename}[/yellow]"
                             )
                             incrementDownloadCount()
                             _pool.task_done()
@@ -309,7 +308,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
             incrementErrorCount()
             progress.update(
                 task_id,
-                description=f"[red]W{worker_id}: Failed[/red]"
+                description=f"[red]W{worker_id}: {filename}[/red]"
             )
 
             log_event(
@@ -373,7 +372,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         Layout(progress, name="body")
     )
 
-    with Live(layout, refresh_per_second=24):
+    with Live(layout, refresh_per_second=10):
 
         # Start workers
         for i in range(workers):
