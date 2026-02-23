@@ -340,6 +340,7 @@ except KeyboardInterrupt:
     poolDownloader.signalStart()
     poolDownloader.empty_pool(downloadWorkers)
     poolDownloader.producerDone()
+    poolDownloader.stop_pool()
     
 
     poolDownloader.log_event(
@@ -353,7 +354,7 @@ except KeyboardInterrupt:
 
 
 finally:        
-    poolDownloader.wait_for_completion() ## wait for workers to finish before exiting, allows for graceful shutdown and state saving on interrupt
+    poolDownloader.empty_pool(downloadWorkers)
 
     lastLocation = poolDownloader.getLastLocation()
 

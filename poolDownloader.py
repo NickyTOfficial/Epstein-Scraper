@@ -64,7 +64,7 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
 ]
 
 failed_log = os.path.join("logs", "failed_downloads.log")
-alt_log = os.path.join("logs", "unknown_alternates.log")
+alt_log = os.path.join("logs", "alternates.log")
 
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
@@ -227,6 +227,8 @@ def poolSize():
         return _pool.qsize()
     else:
         return 0
+    
+
 
 def empty_pool(numWorkers):
 
@@ -242,8 +244,11 @@ def empty_pool(numWorkers):
         except queue.Empty:
             break
 
-    for _ in range(numWorkers):
+    for _ in _workers:
         _pool.put(SENTINEL)
+
+    for t in _workers:
+        t.join()
 
     return removed
 
@@ -411,7 +416,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
             t.start()
             _workers.append(t)
 
-        while True:
+        while any(t.is_alive() for t in _workers):
             with _counter_lock:
                 header_text = Text(
                     f"Dataset: {_globalDataset} | Page: {_globalPage} | Files Downloaded: {_download_count} | Pool Size: {poolSize()} | Forbiddens: {forbiddens} | Errors: {errors} | Alternates: {alternateCount} | Unknown Alternates: {unknownAlternateCount}",
@@ -421,18 +426,5 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
             layout["header"].update(Panel(header_text))
             layout["body"].size = min(workers, 16)
 
-            if _producer_done.is_set():
-                # Check if all work is finished
-                if _pool.unfinished_tasks == 0:
-                    break
-
             randomDelay(200)  # Random delay to avoid busy waiting
 
-        _pool.join()
-
-        # Now send SENTINEL to each worker
-        for _ in _workers:
-            _pool.put(SENTINEL)
-
-        for t in _workers:
-            t.join()
