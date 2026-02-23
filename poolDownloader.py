@@ -89,7 +89,7 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
                 alt_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} |Alternate found, Dataset {_globalDataset} | Page {_filepage} | {altUrl}"
             )
-            return (_dataset, _filepage, _url)  # return as tuple with page and dataset info for state saving
+            return (_dataset, _filepage, altUrl)  # return as tuple with page and dataset info for state saving
 
         # Explicitly ignore rate limiting and forbidden during probing
         if r.status_code in (403, 429, 503):

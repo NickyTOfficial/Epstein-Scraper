@@ -68,7 +68,7 @@ s = requests.Session()
 
 s.headers.update({ ## Simulating a browser to increase authenticity of requests, reducing scraper detection
     
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (X11; Windows 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
@@ -148,14 +148,14 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
             r = None
 
         if r is None:
-            randomDelay(delay + 5 * attempt)  # increase delay with each retry
+            randomDelay(delay + 10 * attempt)  # increase delay with each retry
             continue
 
         if r.status_code == 200:
             if b"EFTA" in r.content or b"ReportLab" in r.content or len(r.content) > 200:
                 return r
             else:
-                randomDelay(delay + 5 * attempt)  # increase delay with each retry
+                randomDelay(delay + 10 * attempt)  # increase delay with each retry
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
