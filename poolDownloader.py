@@ -87,7 +87,7 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
         if r.status_code == 200:
             log_event(
                 alt_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} |Alternate found, Dataset {_globalDataset} | Page {_filepage} | {altUrl}"
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Alternate found, Dataset {_globalDataset} | Page {_filepage} | {altUrl}"
             )
             return (_dataset, _filepage, altUrl)  # return as tuple with page and dataset info for state saving
 
