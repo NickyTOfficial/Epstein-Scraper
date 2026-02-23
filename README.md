@@ -1,6 +1,10 @@
 ## This is the Epstein-Scraper project
 The easiest way to run this is by cloning this repository in VS code, with the proper python extensions installed.
 
+## WARNING! Dataset 7 is currently broken! Do not attempt to scan!
+I have no idea what the DOJ is doing with it right now but any attempt 
+  I've made to try and scan it leads to endless frustration from broken pages, just don't try it for now
+
 Configure the YAML file as you see fit, the options should be pretty self explanatory.
 
 I implemented a download pool to more efficiently comb through the files. 
