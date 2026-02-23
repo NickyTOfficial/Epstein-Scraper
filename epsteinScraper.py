@@ -221,34 +221,10 @@ def updatePool(dataset_num, start_page=0):
 
             if not (aria_next): # theoreticallt the end of the dataset should have no "next" button
 
-                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-
-                poolDownloader.log_event(
-                    poolDownloader.failed_log,
-                    f"{timestamp} | Dataset {dataset_num} reached end condition"
-                )
-
-                poolDownloader.log_event(
-                    poolDownloader.alt_log,
-                    f"{timestamp} | Dataset {dataset_num} reached end condition"
-                )
-
                 final_page = True
 
         if(len(page_files) < 40): #this is specifically to handle dataset 6
                 
-            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-
-            poolDownloader.log_event(
-                poolDownloader.failed_log,
-                f"{timestamp} | Dataset {dataset_num} reached end condition"
-            )
-
-            poolDownloader.log_event(
-                poolDownloader.alt_log,
-                f"{timestamp} | Dataset {dataset_num} reached end condition"
-            )
-
             final_page = True
         
 
@@ -268,6 +244,19 @@ def updatePool(dataset_num, start_page=0):
             save_state(poolDownloader.getLastLocation())
 
         if(final_page): 
+
+
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} reached end condition"
+            )
+
+            poolDownloader.log_event(
+                poolDownloader.alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {dataset_num} reached end condition"
+            )
+
+
             poolDownloader.signalStart()
             poolDownloader.producerDone()
             break
