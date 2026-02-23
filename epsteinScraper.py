@@ -199,18 +199,12 @@ def updatePool(dataset_num, start_page=0):
         if not page_files:
             break  # empty page = stop safely
 
-        # --- Canonical detection ---
-        canonical_tag = soup.find("link", rel="canonical")
-        canonical_href = canonical_tag["href"] if canonical_tag else ""
-
-        expected_page_fragment = f"?page={page}"
-        is_fallback = expected_page_fragment not in canonical_href
 
         # Log inaccessible no-pagination fallback pages
         pagination = soup.find(class_="usa-pagination")
 
-        if not pagination and is_fallback:
-            page_hash = hash(tuple(page_files))
+        if not pagination:
+
             poolDownloader.log_event(
                 poolDownloader.failed_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | "
@@ -221,43 +215,27 @@ def updatePool(dataset_num, start_page=0):
             randomDelay(timeBetweenPages)
             continue
 
-        # --- Duplicate detection with fallback protection ---
-        if (
-            last_page_files is not None
-            and page_files == last_page_files
-            and not is_fallback
-            and page > start_page
-        ):
-            # Confirm with forward probe
-            probe_url = f"{datasetPattern.format(dataset_num)}?page={page + 1}"
-            probe_r = fetch_with_retry(probe_url, s, retries=fetchRetries)
 
-            if probe_r:
-                probe_soup = BeautifulSoup(probe_r.text, "html.parser")
-                probe_files = sorted({
-                    a["href"].split("/")[-1]
-                    for a in probe_soup.find_all("a", href=True)
-                    if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
-                })
+        aria_next = pagination.find("a", attrs={"aria-label": "Next page"}) 
 
-                if probe_files == page_files:
+        if not (aria_next):
 
-                    # ---- END CONDITION CONFIRMED ----
-                    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+            # ---- END CONDITION CONFIRMED ----
+            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-                    poolDownloader.log_event(
-                        poolDownloader.failed_log,
-                        f"{timestamp} | Dataset {dataset_num} reached end condition"
-                    )
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{timestamp} | Dataset {dataset_num} reached end condition"
+            )
 
-                    poolDownloader.log_event(
-                        poolDownloader.alt_log,
-                        f"{timestamp} | Dataset {dataset_num} reached end condition"
-                    )
+            poolDownloader.log_event(
+                poolDownloader.alt_log,
+                f"{timestamp} | Dataset {dataset_num} reached end condition"
+            )
 
-                    poolDownloader.signalStart()
-                    poolDownloader.producerDone()
-                    break
+            poolDownloader.signalStart()
+            poolDownloader.producerDone()
+            break
 
         # --- Queue files ---
         pool_objects = [
@@ -335,7 +313,7 @@ try:
         updatePool(iterand, page_offset)
 
         # Save resume state **after** scraping that dataset’s pages
-        save_state(poolDownloader.getLastLocation()[0],poolDownloader.getLastLocation()[1])
+        save_state(poolDownloader.getLastLocation())
             
 except KeyboardInterrupt:
 

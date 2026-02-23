@@ -295,6 +295,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                                 completed=remote_size,
                                 description=f"[yellow]W{worker_id}: {filename}[/yellow]"
                             )
+                            setLastLocation((_dataset,_filepage))
                             incrementDownloadCount()
                             _pool.task_done()
                             continue
