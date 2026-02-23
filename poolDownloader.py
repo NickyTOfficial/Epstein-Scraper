@@ -391,6 +391,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
 
     layout = Layout()
 
+
     layout.split_column(
         Layout(name="header", size=3),
         Layout(progress, name="body")
@@ -415,6 +416,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
                 )
 
             layout["header"].update(Panel(header_text))
+            layout["body"].size = min(workers, 16)
 
             if _producer_done.is_set():
                 # Check if all work is finished
