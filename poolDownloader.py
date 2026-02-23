@@ -64,7 +64,7 @@ tryExt = [ # alternate file extensions to use in case a pdf shows "No Images Pro
 ]
 
 failed_log = os.path.join("logs", "failed_downloads.log")
-unknown_alt_log = os.path.join("logs", "unknown_alternates.log")
+alt_log = os.path.join("logs", "unknown_alternates.log")
 
 def randomDelay(delay):
     delay = delay / 1000  # convert ms to seconds
@@ -85,6 +85,10 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
             continue
 
         if r.status_code == 200:
+            log_event(
+                alt_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} |Alternate found, Dataset {_globalDataset} | Page {_filepage} | {altUrl}"
+            )
             return (altUrl, _filepage, _dataset)  # return as tuple with page and dataset info for state saving
 
         # Explicitly ignore rate limiting and forbidden during probing
@@ -96,8 +100,8 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
     incrementUnknownAlternateCount()
 
     log_event(
-        unknown_alt_log,
-        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Dataset {_globalDataset} | Page {_filepage} | {_url}"
+        alt_log,
+        f"{time.strftime('%Y-%m-%d %H:%M:%S')} | No alternate found, Dataset {_globalDataset} | Page {_filepage} | {_url}"
     )
 
     return None

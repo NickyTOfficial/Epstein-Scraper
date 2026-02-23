@@ -251,7 +251,7 @@ def updatePool(dataset_num, start_page=0):
                     )
 
                     poolDownloader.log_event(
-                        poolDownloader.unknown_alt_log,
+                        poolDownloader.alt_log,
                         f"{timestamp} | Dataset {dataset_num} reached end condition"
                     )
 
@@ -309,7 +309,7 @@ try:
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
             )
             poolDownloader.log_event(
-                poolDownloader.unknown_alt_log,
+                poolDownloader.alt_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Resuming from Dataset {last_dataset}, Page {last_page}"
             )
         except ValueError:
@@ -319,7 +319,7 @@ try:
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
             )
             poolDownloader.log_event(
-                poolDownloader.unknown_alt_log,
+                poolDownloader.alt_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Starting scraping from beginning of configured dataset"
             )
 
@@ -349,7 +349,7 @@ except KeyboardInterrupt:
         f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
     )
     poolDownloader.log_event(
-        poolDownloader.unknown_alt_log,
+        poolDownloader.alt_log,
         f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Interrupted by user"
     )
 
@@ -364,6 +364,6 @@ finally:
         f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting at Dataset {lastLocation[0]}, Page {lastLocation[1]}"
     )
     poolDownloader.log_event(
-        poolDownloader.unknown_alt_log,
+        poolDownloader.alt_log,
         f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Log closed, scraper exiting at Dataset {lastLocation[0]}, Page {lastLocation[1]}"
     )
