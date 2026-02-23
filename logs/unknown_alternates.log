@@ -277,3 +277,270 @@
 2026-02-22 20:29:44 | Dataset 11 reached end condition
 2026-02-22 20:29:46 | Dataset 12 reached end condition
 2026-02-22 20:29:47 | Log closed, scraper exiting at Dataset 12, Page 2
+2026-02-22 20:46:14 | Resuming from Dataset 10, Page 5500
+2026-02-22 20:46:33 | Interrupted by user
+2026-02-22 20:46:34 | Log closed, scraper exiting at Dataset 10, Page 5547
+2026-02-22 20:47:19 | Resuming from Dataset 10, Page 5500
+2026-02-22 22:26:53 | Interrupted by user
+2026-02-22 22:26:53 | Log closed, scraper exiting at Dataset 10, Page 9366
+2026-02-22 22:27:09 | Resuming from Dataset 10, Page 9366
+2026-02-22 22:37:46 | Dataset 10 reached end condition
+2026-02-22 22:38:04 | Log closed, scraper exiting at Dataset 10, Page 10057
+2026-02-22 22:43:56 | Resuming from Dataset 10, Page 10045
+2026-02-22 22:44:00 | Dataset 10 reached end condition
+2026-02-22 22:44:04 | Log closed, scraper exiting at Dataset 10, Page 10058
+2026-02-22 22:45:18 | Resuming from Dataset 10, Page 10045
+2026-02-22 22:45:21 | Dataset 10 reached end condition
+2026-02-22 22:45:24 | Log closed, scraper exiting at Dataset 10, Page 10045
+2026-02-22 22:45:47 | Resuming from Dataset 1, Page 0
+2026-02-22 22:45:58 | Interrupted by user
+2026-02-22 22:45:58 | Log closed, scraper exiting at Dataset 1, Page 47
+2026-02-22 22:46:08 | Resuming from Dataset 1, Page 44
+2026-02-22 22:46:12 | Dataset 1 reached end condition
+2026-02-22 22:46:13 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:46:18 | Dataset 2 reached end condition
+2026-02-22 22:46:19 | Dataset 3 reached end condition
+2026-02-22 22:46:22 | Dataset 4 reached end condition
+2026-02-22 22:46:22 | Dataset 5 reached end condition
+2026-02-22 22:46:32 | Interrupted by user
+2026-02-22 22:50:22 | Resuming from Dataset 1, Page 0
+2026-02-22 22:50:45 | Dataset 1 reached end condition
+2026-02-22 22:50:46 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:46 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:47 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:47 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:47 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:47 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:47 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:48 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:49 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:49 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:49 | Dataset 2 reached end condition
+2026-02-22 22:50:49 | Dataset 3 reached end condition
+2026-02-22 22:50:50 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:50:50 | Dataset 4 reached end condition
+2026-02-22 22:50:52 | Dataset 5 reached end condition
+2026-02-22 22:50:54 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:06 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:06 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:06 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:06 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:06 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:07 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:08 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:09 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:10 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:51:34 | Interrupted by user
+2026-02-22 22:52:40 | Resuming from Dataset 1, Page 0
+2026-02-22 22:53:05 | Dataset 1 reached end condition
+2026-02-22 22:53:06 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:06 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:07 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:07 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:07 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:08 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:08 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:09 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:10 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:11 | Dataset 2 reached end condition
+2026-02-22 22:53:11 |Alternate found, Dataset 3 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:11 |Alternate found, Dataset 3 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:11 | Dataset 3 reached end condition
+2026-02-22 22:53:11 | Dataset 4 reached end condition
+2026-02-22 22:53:11 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:53:11 | Dataset 5 reached end condition
+2026-02-22 22:54:09 | Interrupted by user
+2026-02-22 22:55:56 | Resuming from Dataset 2, Page 1
+2026-02-22 22:55:57 | Dataset 2 reached end condition
+2026-02-22 22:55:57 | Dataset 3 reached end condition
+2026-02-22 22:56:15 | Interrupted by user
+2026-02-22 22:56:26 | Resuming from Dataset 1, Page 0
+2026-02-22 22:56:48 | Starting scraping from beginning of configured dataset
+2026-02-22 22:57:09 | Dataset 1 reached end condition
+2026-02-22 22:57:11 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:12 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:13 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:13 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:13 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:14 | Dataset 2 reached end condition
+2026-02-22 22:57:14 | Dataset 3 reached end condition
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:15 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:16 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:16 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:16 | Dataset 4 reached end condition
+2026-02-22 22:57:16 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:17 | Dataset 5 reached end condition
+2026-02-22 22:57:17 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 | Log closed, scraper exiting at Dataset 2, Page 1
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:18 |Alternate found, Dataset 6 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 22:57:59 | Resuming from Dataset 5, Page 2
+2026-02-22 22:57:59 | Dataset 5 reached end condition
+2026-02-22 22:58:00 | Log closed, scraper exiting at Dataset 5, Page 2
+2026-02-22 22:58:23 | Resuming from Dataset 5, Page 0
+2026-02-22 22:58:23 | Dataset 5 reached end condition
+2026-02-22 22:58:24 | Log closed, scraper exiting at Dataset 5, Page 2
+2026-02-22 23:01:06 | Resuming from Dataset 5, Page 0
+2026-02-22 23:01:06 | Dataset 5 reached end condition
+2026-02-22 23:01:08 | Log closed, scraper exiting at Dataset 5, Page 2
+2026-02-22 23:01:55 | Resuming from Dataset 5, Page 0
+2026-02-22 23:01:56 | Dataset 5 reached end condition
+2026-02-22 23:04:32 | Resuming from Dataset 1, Page 0
+2026-02-22 23:04:32 | Log closed, scraper exiting at Dataset -1, Page -1
+2026-02-22 23:04:54 | Resuming from Dataset 1, Page 0
+2026-02-22 23:05:21 | Dataset 1 reached end condition
+2026-02-22 23:05:23 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:23 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:23 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:24 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:24 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:24 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:24 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:24 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:25 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:25 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:26 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:27 |Alternate found, Dataset 2 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:27 | Dataset 2 reached end condition
+2026-02-22 23:05:27 | Dataset 2 reached end condition
+2026-02-22 23:05:27 |Alternate found, Dataset 3 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 | Dataset 3 reached end condition
+2026-02-22 23:05:28 | Dataset 3 reached end condition
+2026-02-22 23:05:28 |Alternate found, Dataset 3 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:28 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:29 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:30 | Dataset 4 reached end condition
+2026-02-22 23:05:30 | Dataset 4 reached end condition
+2026-02-22 23:05:30 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:31 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:31 |Alternate found, Dataset 5 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:05:31 | Dataset 5 reached end condition
+2026-02-22 23:05:31 | Dataset 5 reached end condition
+2026-02-22 23:05:31 | Dataset 6 reached end condition
+2026-02-22 23:05:31 | Dataset 7 reached end condition
+2026-02-22 23:06:26 | Interrupted by user
+2026-02-22 23:06:33 | Resuming from Dataset 2, Page 1
+2026-02-22 23:06:34 | Dataset 2 reached end condition
+2026-02-22 23:06:34 | Dataset 2 reached end condition
+2026-02-22 23:06:34 | Dataset 3 reached end condition
+2026-02-22 23:06:34 | Dataset 3 reached end condition
+2026-02-22 23:06:35 |Alternate found, Dataset 4 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:35 | Dataset 4 reached end condition
+2026-02-22 23:06:35 | Dataset 4 reached end condition
+2026-02-22 23:06:36 | Dataset 5 reached end condition
+2026-02-22 23:06:36 | Dataset 5 reached end condition
+2026-02-22 23:06:36 | Dataset 6 reached end condition
+2026-02-22 23:06:37 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:38 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:38 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:38 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:38 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:38 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:39 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 6 | https://www.justice.gov/epstein/files/DataSet%208/EFTA00010707.mp4
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:40 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:41 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:41 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:41 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:41 |Alternate found, Dataset 8 | Page 1 | https://www.justice.gov/epstein/files/DataSet%202/EFTA00003212.avi
+2026-02-22 23:06:41 |Alternate found, Dataset 8 | Page 6 | https://www.justice.gov/epstein/files/DataSet%208/EFTA00010707.mp4

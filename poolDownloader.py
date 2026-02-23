@@ -89,7 +89,7 @@ def alternateUrl(poolObject, session, timeBetweenFiles):
                 alt_log,
                 f"{time.strftime('%Y-%m-%d %H:%M:%S')} |Alternate found, Dataset {_globalDataset} | Page {_filepage} | {altUrl}"
             )
-            return (altUrl, _filepage, _dataset)  # return as tuple with page and dataset info for state saving
+            return (_dataset, _filepage, _url)  # return as tuple with page and dataset info for state saving
 
         # Explicitly ignore rate limiting and forbidden during probing
         if r.status_code in (403, 429, 503):
@@ -255,6 +255,8 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
     task_id = progress.add_task(f"Worker {worker_id}", total=1)
     _start_event.wait()
 
+
+
     while True:
 
         try:   
@@ -270,6 +272,8 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
         _dataset = poolObject[0]
         _filepage = poolObject[1]
         _url = poolObject[2]
+
+        setLastLocation((_dataset,_filepage))
 
         filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
@@ -295,7 +299,6 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                                 completed=remote_size,
                                 description=f"[yellow]W{worker_id}: {filename}[/yellow]"
                             )
-                            setLastLocation((_dataset,_filepage))
                             incrementDownloadCount()
                             _pool.task_done()
                             continue
@@ -368,7 +371,6 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
 
 
         finally:
-            
             if timeBetweenFiles > 0:
                 randomDelay(timeBetweenFiles)
 

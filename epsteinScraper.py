@@ -168,11 +168,12 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
 
 #---------------#
 
-possible_terminations = 0
+
 
 def updatePool(dataset_num, start_page=0):
     page = start_page
-    last_page_files = None
+
+    final_page = False
 
     while True:
 
@@ -185,7 +186,7 @@ def updatePool(dataset_num, start_page=0):
 
         if r is None:
             poolDownloader.incrementErrorCount()
-            break
+            continue
 
         soup = BeautifulSoup(r.text, "html.parser")
 
@@ -203,7 +204,7 @@ def updatePool(dataset_num, start_page=0):
         # Log inaccessible no-pagination fallback pages
         pagination = soup.find(class_="usa-pagination")
 
-        if not pagination:
+        if not pagination and len(page_files) > 40:
 
             poolDownloader.log_event(
                 poolDownloader.failed_log,
@@ -213,14 +214,29 @@ def updatePool(dataset_num, start_page=0):
             )
             page += 1
             randomDelay(timeBetweenPages)
-            continue
+            break
 
+        if(pagination):
+            aria_next = pagination.find("a", attrs={"aria-label": "Next page"}) 
 
-        aria_next = pagination.find("a", attrs={"aria-label": "Next page"}) 
+            if not (aria_next): # theoreticallt the end of the dataset should have no "next" button
 
-        if not (aria_next):
+                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-            # ---- END CONDITION CONFIRMED ----
+                poolDownloader.log_event(
+                    poolDownloader.failed_log,
+                    f"{timestamp} | Dataset {dataset_num} reached end condition"
+                )
+
+                poolDownloader.log_event(
+                    poolDownloader.alt_log,
+                    f"{timestamp} | Dataset {dataset_num} reached end condition"
+                )
+
+                final_page = True
+
+        if(len(page_files) < 40): #this is specifically to handle dataset 6
+                
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
             poolDownloader.log_event(
@@ -233,9 +249,8 @@ def updatePool(dataset_num, start_page=0):
                 f"{timestamp} | Dataset {dataset_num} reached end condition"
             )
 
-            poolDownloader.signalStart()
-            poolDownloader.producerDone()
-            break
+            final_page = True
+        
 
         # --- Queue files ---
         pool_objects = [
@@ -252,9 +267,14 @@ def updatePool(dataset_num, start_page=0):
         if(poolDownloader.isStarted()):
             save_state(poolDownloader.getLastLocation())
 
-        last_page_files = page_files
+        if(final_page): 
+            poolDownloader.signalStart()
+            poolDownloader.producerDone()
+            break
+
         page += 1
         randomDelay(timeBetweenPages)
+
 
 
 
