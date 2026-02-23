@@ -213,8 +213,7 @@ def updatePool(dataset_num, start_page=0):
                 f"No pagination, inaccessible page | {requested_url}"
             )
             page += 1
-            randomDelay(timeBetweenPages)
-            break
+            continue
 
         if(pagination):
             aria_next = pagination.find("a", attrs={"aria-label": "Next page"}) 
