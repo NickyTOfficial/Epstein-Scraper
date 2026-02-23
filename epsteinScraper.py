@@ -68,7 +68,7 @@ s = requests.Session()
 
 s.headers.update({ ## Simulating a browser to increase authenticity of requests, reducing scraper detection
     
-    "User-Agent": "Mozilla/5.0 (X11; Windows 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36>",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Accept-Encoding": "gzip, deflate, br",
@@ -340,7 +340,6 @@ except KeyboardInterrupt:
     poolDownloader.signalStart()
     poolDownloader.empty_pool(downloadWorkers)
     poolDownloader.producerDone()
-    poolDownloader.stop_pool()
     
 
     poolDownloader.log_event(

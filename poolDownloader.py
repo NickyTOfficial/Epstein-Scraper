@@ -305,6 +305,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
                                 description=f"[yellow]W{worker_id}: {filename}[/yellow]"
                             )
                             incrementDownloadCount()
+                            randomDelay(timeBetweenFiles)
                             _pool.task_done()
                             continue
             except Exception:
