@@ -28,7 +28,7 @@ directory = config.get("directory", os.getcwd())
 timeBetweenPages = float(config.get("timeBetweenPages", 40))
 timeBetweenFiles = float(config.get("timeBetweenFiles", 40))
 fetchRetries = int(config.get("fetchRetries", 25))
-timeBetween403 = float(config.get("timeBetween403", 4))
+timeBetween403 = float(config.get("timeBetween403", 4000))
 datasets = config.get("datasets", [1])
 downloadWorkers = int(config.get("downloadWorkers", 8))
 poolSize = int(config.get("poolSize", 600))
@@ -38,7 +38,7 @@ data = {
     "timeBetweenPages": timeBetweenPages,
     "timeBetweenFiles": timeBetweenFiles,
     "fetchRetries": fetchRetries,
-    "timebetween403": timeBetween403,
+    "timeBetween403": timeBetween403,
     "datasets": datasets,
     "downloadWorkers": downloadWorkers,
     "poolSize": poolSize
@@ -60,20 +60,9 @@ s = requests.Session()
 
 s.headers.update({ ## Simulating a browser to increase authenticity of requests, reducing scraper detection
     
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36>",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Referer": "https://www.justice.gov/",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-User": "?1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-CH-UA": "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"",
-    "Sec-CH-UA-Mobile": "?0",
-    "Sec-CH-UA-Platform": "\"Linux\""
     
 })
 
@@ -140,19 +129,19 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
             r = None
 
         if r is None:
-            randomDelay(delay + 10 * attempt)  # increase delay with each retry
+            randomDelay(delay + ((delay*0.5) * attempt))  # increase delay with each retry
             continue
 
         if r.status_code == 200:
             if b"EFTA" in r.content or b"ReportLab" in r.content or len(r.content) > 200:
                 return r
             else:
-                randomDelay(delay + 10 * attempt)  # increase delay with each retry
+                randomDelay(delay + ((delay*0.2) ** attempt))  # increase delay with each retry
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
             poolDownloader.incrementForbiddenCount()
-            randomDelay(timeBetween403 + 5 * attempt)  # increase delay with each retry
+            randomDelay(timeBetween403 + ((timeBetween403*0.5) * attempt))  # increase delay with each retry
             continue
 
     return None
@@ -174,7 +163,7 @@ def updatePool(dataset_num, start_page=0):
             continue
 
         requested_url = f"{datasetPattern.format(dataset_num)}?page={page}"
-        r = fetch_with_retry(requested_url, s, retries=fetchRetries)
+        r = fetch_with_retry(requested_url, s, retries=fetchRetries, delay=timeBetweenPages, timeBetween403=timeBetween403)
 
         if r is None:
             poolDownloader.incrementErrorCount()
