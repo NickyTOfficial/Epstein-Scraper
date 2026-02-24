@@ -5,3 +5,5 @@ logs/failed_downloads.log
 logs/unknown_alternates.log
 epsteinScraper.txt
 poolDownloader.txt
+test.py
+epsteinInterpolator.py

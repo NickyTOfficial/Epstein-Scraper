@@ -17,35 +17,27 @@ filePattern = "https://www.justice.gov/epstein/files/DataSet%20{}/{}"
 
 # setup code
 
+config = {}
+
 try:
     config = yaml.safe_load(open("config.yaml"))  # load config from yaml file, or create default if it doesn't exist or fails to load
 except Exception:
     print("Error loading config.yaml, using default configuration.")
-    config = {
-        "directory": os.getcwd(),  ## these are some fairly reliable settings I've found that don't run into ip blocking
-        "fetchRetries": 25,
-        "timeBetweenFiles": 40,
-        "timeBetweenPages": 40,
-        "timeBetween403" : 4,
-        "downloadWorkers": 18,
-        "datasets": [1, 2, 3, 4],
-        "poolSize": 600
-    }
 
-directory = config.get("directory")
-timeBetweenPages = float(config.get("timeBetweenPages", "20"))
-fetchRetries = int(config.get("fetchRetries", "5"))
-timeBetweenFiles = float(config.get("timeBetweenFiles", "0.1"))
-timeBetween403 = float(config.get("timeBetween403", "4"))
+directory = config.get("directory", os.getcwd())
+timeBetweenPages = float(config.get("timeBetweenPages", 40))
+timeBetweenFiles = float(config.get("timeBetweenFiles", 40))
+fetchRetries = int(config.get("fetchRetries", 25))
+timeBetween403 = float(config.get("timeBetween403", 4))
 datasets = config.get("datasets", [1])
 downloadWorkers = int(config.get("downloadWorkers", 8))
-poolSize = int(config.get("poolSize", 100))
+poolSize = int(config.get("poolSize", 600))
 
 data = {
     "directory": directory,
     "timeBetweenPages": timeBetweenPages,
-    "fetchRetries": fetchRetries,
     "timeBetweenFiles": timeBetweenFiles,
+    "fetchRetries": fetchRetries,
     "timebetween403": timeBetween403,
     "datasets": datasets,
     "downloadWorkers": downloadWorkers,
@@ -196,13 +188,21 @@ def updatePool(dataset_num, start_page=0):
             for a in soup.find_all("a", href=True)
             if "/epstein/files/" in a["href"] and "EFTA" in a["href"]
         })
-
-        if not page_files:
-            break  # empty page = stop safely
-
-
-        # Log inaccessible no-pagination fallback pages
+        # Log inaccessible no-pagination and access denied pages
         pagination = soup.find(class_="usa-pagination")
+        access_denied = soup.find(title_="Access Denied")
+
+
+        if access_denied:
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Access denied at https://www.justice.gov/epstein/doj-disclosures/data-set-{page}-files"
+            )
+
+            poolDownloader.signalStart()
+            poolDownloader.empty_pool(downloadWorkers)
+            poolDownloader.producerDone()
+
 
         if not pagination and len(page_files) > 40:
 
@@ -271,7 +271,6 @@ def updatePool(dataset_num, start_page=0):
 
 # Load state and resume from where we left off
 state = load_state()
-pending = state.get("pending_urls", [])
 last_dataset = state.get("last_dataset")
 last_page = state.get("last_page")
 
