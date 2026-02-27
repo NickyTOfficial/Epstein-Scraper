@@ -2,10 +2,10 @@
 /Epstein Lister
 scraper_state.json
 logs/failed_downloads.log
-logs/unknown_alternates.log
 epsteinScraper.txt
 poolDownloader.txt
 test.py
 epsteinInterpolator.py
 failed_downloads.log.txt
 alternates.log.txt
+logs/alternates.log
