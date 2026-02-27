@@ -1,9 +1,0 @@
-outputDirectory: C:\Users\Nick\Documents\Epstein Scraper
-scanLocations:
-  1: !!python/tuple
-  - 0
-  - 1
-  2: !!python/tuple
-  - 2
-  - 3
-scanningDirectory: C:\Users\Nick\Documents\Epstein Scraper\Processed
