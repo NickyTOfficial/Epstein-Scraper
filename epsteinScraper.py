@@ -12,7 +12,7 @@ import poolDownloader
 datasetPattern = "https://www.justice.gov/epstein/doj-disclosures/data-set-{}-files"
 filePattern = "https://www.justice.gov/epstein/files/DataSet%20{}/{}"
 
-
+generating_files = None
 
 
 # setup code
@@ -136,7 +136,7 @@ def fetch_with_retry(url, session, retries=5, delay=3, timeBetween403 = 4):
             if b"EFTA" in r.content or b"ReportLab" in r.content or len(r.content) > 200:
                 return r
             else:
-                randomDelay(delay + ((delay*0.2) ** attempt))  # increase delay with each retry
+                randomDelay(delay + ((delay*0.5) * attempt))  # increase delay with each retry
                 continue
 
         if r.status_code in (403, 429, 500, 502, 503):
@@ -180,17 +180,27 @@ def updatePool(dataset_num, start_page=0):
         # Log inaccessible no-pagination and access denied pages
         pagination = soup.find(class_="usa-pagination")
         access_denied = soup.find(title_="Access Denied")
-
+        generating_files = soup.find_all('link', href= "list%20still%20generating_files/slick.css")
 
         if access_denied:
             poolDownloader.log_event(
                 poolDownloader.failed_log,
-                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Access denied at https://www.justice.gov/epstein/doj-disclosures/data-set-{page}-files"
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Access denied at https://www.justice.gov/epstein/doj-disclosures/data-set-{dataset_num}-files?page={page}"
             )
 
             poolDownloader.signalStart()
             poolDownloader.empty_pool(downloadWorkers)
             poolDownloader.producerDone()
+
+        if generating_files:
+
+            poolDownloader.log_event(
+                poolDownloader.failed_log,
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Generating files redirect at https://www.justice.gov/epstein/doj-disclosures/data-set-{dataset_num}-files?page={page}"
+            )
+
+            randomDelay(timeBetween403)
+            continue
 
 
         if not pagination and len(page_files) > 40:
@@ -207,11 +217,11 @@ def updatePool(dataset_num, start_page=0):
         if(pagination):
             aria_next = pagination.find("a", attrs={"aria-label": "Next page"}) 
 
-            if not (aria_next): # theoreticallt the end of the dataset should have no "next" button
+            if not (aria_next): # theoretically the end of the dataset should have no "next" button
 
                 final_page = True
 
-        if(len(page_files) < 40): #this is specifically to handle dataset 6
+        if( 1 <= len(page_files) < 40): #this is specifically to handle dataset 6 and 7
                 
             final_page = True
         

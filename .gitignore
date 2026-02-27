@@ -7,3 +7,5 @@ epsteinScraper.txt
 poolDownloader.txt
 test.py
 epsteinInterpolator.py
+failed_downloads.log.txt
+alternates.log.txt
