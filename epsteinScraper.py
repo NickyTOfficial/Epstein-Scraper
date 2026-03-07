@@ -32,6 +32,7 @@ timeBetween403 = float(config.get("timeBetween403", 4000))
 datasets = config.get("datasets", [1])
 downloadWorkers = int(config.get("downloadWorkers", 8))
 poolSize = int(config.get("poolSize", 600))
+trustLocalFiles = config.get("trustLocalFiles",False)
 
 data = {
     "directory": directory,
@@ -41,7 +42,8 @@ data = {
     "timeBetween403": timeBetween403,
     "datasets": datasets,
     "downloadWorkers": downloadWorkers,
-    "poolSize": poolSize
+    "poolSize": poolSize,
+    "trustLocalFiles": trustLocalFiles
 }
 
 os.makedirs(directory, exist_ok=True)
@@ -279,7 +281,7 @@ try:
 
     downloader_thread = threading.Thread(
         target=poolDownloader.downloadFromPool,
-        args=(directory, downloadWorkers, timeBetweenFiles, s),
+        args=(directory, downloadWorkers, timeBetweenFiles, s, trustLocalFiles),
     )
     downloader_thread.start()
 

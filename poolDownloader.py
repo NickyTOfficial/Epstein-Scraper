@@ -257,7 +257,7 @@ def empty_pool(numWorkers):
 def wait_for_completion():
     _pool.join()
 
-def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
+def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles, trustLocalFiles):
 
     task_id = progress.add_task(f"Worker {worker_id}", total=1)
     _start_event.wait()
@@ -285,33 +285,52 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
         filename = os.path.basename(_url)
         path = os.path.join(out_dir, f"Dataset {_dataset}", filename)
 
-        # ---- Skip logic ----
-        if os.path.exists(path):
-            try:
-                head = head_with_retry(session, _url, retries=5, base_delay=1)
-                if head.status_code == 200:
-                    remote_size = head.headers.get("Content-Length")
-                    if remote_size:
-                        remote_size = int(remote_size)
-                        local_size = os.path.getsize(path)
 
-                        # Skip if identical and not the small "No Images Produced" PDF
-                        if (
-                            local_size == remote_size and
-                            not (0.9 < remote_size / 2433 < 1.1)
-                        ):
-                            progress.update(
-                                task_id,
-                                total=remote_size,
-                                completed=remote_size,
-                                description=f"[yellow]W{worker_id}: {filename}[/yellow]"
-                            )
-                            incrementDownloadCount()
-                            randomDelay(timeBetweenFiles)
-                            _pool.task_done()
-                            continue
-            except Exception:
-                pass
+        if(trustLocalFiles):
+                
+            if os.path.exists(path):
+
+
+
+                progress.update(
+                    task_id,
+                    total=0,
+                    completed=0,
+                    description=f"[yellow]W{worker_id}: {filename}[/yellow]"
+                )
+
+                incrementDownloadCount()
+                randomDelay(timeBetweenFiles)
+                _pool.task_done()
+                continue
+        else:
+
+            if os.path.exists(path):
+                try:
+                    head = head_with_retry(session, _url, retries=5, base_delay=1)
+                    if head.status_code == 200:
+                        remote_size = head.headers.get("Content-Length")
+                        if remote_size:
+                            remote_size = int(remote_size)
+                            local_size = os.path.getsize(path)
+            
+                            # Skip if identical and not the small "No Images Produced" PDF
+                            if (
+                                local_size == remote_size and
+                                not (0.9 < remote_size / 2433 < 1.1)
+                            ):
+                                progress.update(
+                                    task_id,
+                                    total=remote_size,
+                                    completed=remote_size,
+                                    description=f"[yellow]W{worker_id}: {filename}[/yellow]"
+                                )
+                                incrementDownloadCount()
+                                randomDelay(timeBetweenFiles)
+                                _pool.task_done()
+                                continue
+                except Exception:
+                    pass
 
         try:
             with session.get(_url, stream=True) as r:
@@ -384,7 +403,7 @@ def _download_worker(worker_id, out_dir, session, progress, timeBetweenFiles):
 
 
 
-def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
+def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None, trustLocalFiles=False):
     os.makedirs(out_dir, exist_ok=True)
 
     progress = Progress(
@@ -414,7 +433,7 @@ def downloadFromPool(out_dir, workers=8, timeBetweenFiles=10, session=None):
         for i in range(workers):
             t = threading.Thread(
                 target=_download_worker,
-                args=(i, out_dir, session, progress, timeBetweenFiles),
+                args=(i, out_dir, session, progress, timeBetweenFiles, trustLocalFiles),
             )
             t.start()
             _workers.append(t)

@@ -9,3 +9,4 @@ epsteinInterpolator.py
 failed_downloads.log.txt
 alternates.log.txt
 logs/alternates.log
+batch.csv
